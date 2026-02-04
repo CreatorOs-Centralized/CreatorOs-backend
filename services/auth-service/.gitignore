@@ -1,0 +1,31 @@
+## Service build output
+/build/
+/out/
+/target/
+/.gradle/
+
+## IDEs and editors
+/.idea/
+/*.iml
+/.project
+/.classpath
+/.settings/
+
+## Logs and temp
+*.log
+/logs/
+/tmp/
+*.pid
+hs_err_pid*.log
+replay_pid*.log
+
+## Environment and secrets
+/.env
+/.env.*
+*.env
+/secrets/
+/config/local/
+
+## Local runtime data
+/docker-data/
+/volumes/

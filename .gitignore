@@ -1,0 +1,62 @@
+## OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+## IDEs and editors
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.project
+.classpath
+.settings/
+*.launch
+
+## Gradle/Java build output
+.gradle/
+**/.gradle/
+**/build/
+**/out/
+**/bin/
+**/target/
+
+## Logs and temp
+*.log
+logs/
+**/logs/
+**/tmp/
+
+## Test reports and coverage
+**/test-results/
+**/reports/
+**/surefire-reports/
+**/jacoco/
+**/coverage/
+*.exec
+
+## Environment and secrets
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+secrets/
+**/secrets/
+config/local/
+**/config/local/
+
+## Docker and local runtime data
+**/docker-data/
+**/volumes/
