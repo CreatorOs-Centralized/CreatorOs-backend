@@ -1,0 +1,58 @@
+spring:
+  application:
+    name: auth-service
+  # IMPORTANT: Always set an explicit profile via SPRING_PROFILES_ACTIVE.
+  # Supported profiles:
+  # - local: developer workstation defaults
+  # - docker: docker-compose defaults
+  # - prod: production (no unsafe defaults; env vars required)
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+# Logging baseline:
+# - Includes trace/request/user identifiers *when present* (via MDC), without ever logging tokens.
+# - traceId/spanId will be populated only if tracing instrumentation is enabled in the platform.
+logging:
+  pattern:
+    level: "%5p [traceId=%X{traceId:-} spanId=%X{spanId:-} requestId=%X{requestId:-} userId=%X{userId:-}]"
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  # Ops contract:
+  # - Only health/info are exposed over HTTP.
+  # - Health details are hidden by default (override locally if needed).
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+  info:
+    env:
+      enabled: false
+
+info:
+  app:
+    name: ${spring.application.name}
+    version: ${APP_VERSION:0.0.1-SNAPSHOT}
+
+creatoros:
+  kafka:
+    topics:
+      user-created: ${KAFKA_TOPIC_USER_CREATED:auth.user.created}
+      user-role-updated: ${KAFKA_TOPIC_USER_ROLE_UPDATED:auth.user.role-updated}
+      user-deleted: ${KAFKA_TOPIC_USER_DELETED:auth.user.deleted}

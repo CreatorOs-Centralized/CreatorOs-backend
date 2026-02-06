@@ -1,0 +1,120 @@
+services:
+  # Local Kafka broker (DEV ONLY).
+  # This enables auth-service to publish its best-effort user lifecycle events during docker-compose runs.
+  # For production, Kafka provisioning and topic creation should be managed by the platform/ops layer.
+  kafka:
+    image: apache/kafka:4.1.1
+    container_name: auth_service_kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+  # DEV helper: creates topics used by auth-service events.
+  # This avoids relying on broker auto-create behavior.
+  kafka-init:
+    image: apache/kafka:4.1.1
+    container_name: auth_service_kafka_init
+    depends_on:
+      - kafka
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        until /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list >/dev/null 2>&1; do echo "waiting for kafka..."; sleep 2; done;
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic auth.user.created --partitions 1 --replication-factor 1;
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic auth.user.role-updated --partitions 1 --replication-factor 1;
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic auth.user.deleted --partitions 1 --replication-factor 1;
+        echo "kafka topics ready";
+
+  auth-db:
+    image: postgres:15-alpine
+    container_name: auth_service_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: auth_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auth-service
+    depends_on:
+      - auth-db
+      - kafka
+      - kafka-init
+      - keycloak
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_PASSWORD: postgres
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+      # IMPORTANT: issuer-uri must match the token `iss` exactly.
+      # Tokens obtained from the host via port mapping will use http://localhost:8081/realms/<realm>.
+      KEYCLOAK_ISSUER_URI: http://localhost:8081/realms/${KEYCLOAK_REALM:-creatorOs}
+
+      # JWK Set URI can use the Docker network hostname.
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/${KEYCLOAK_REALM:-creatorOs}/protocol/openid-connect/certs
+    ports:
+      # Host port 8080 is commonly used by other tools (e.g. Jenkins). Use 8082 by default.
+      - "8082:8080"
+
+  keycloak-db:
+    image: postgres:15-alpine
+    container_name: keycloak_db
+    environment:
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+      POSTGRES_DB: keycloak
+    ports:
+      - "5432:5432"
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.6
+    container_name: keycloak
+    depends_on:
+      - keycloak-db
+    environment:
+      # Admin user for the Keycloak UI (development convenience).
+      # Change these in real environments.
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+
+      # Enable HTTP for local development.
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_PROXY: edge
+    command:
+      - start-dev
+      - --http-port=8080
+    ports:
+      - "8081:8080"
+
+volumes:
+  auth_db_data:
+  kafka_data:
+  keycloak_db_data:
