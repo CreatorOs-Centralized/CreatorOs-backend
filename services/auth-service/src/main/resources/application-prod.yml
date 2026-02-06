@@ -1,0 +1,49 @@
+# Production profile.
+# NO unsafe defaults: required values must be provided via environment variables / secret manager.
+#
+# REQUIRED environment variables:
+# - SPRING_DATASOURCE_URL            (jdbc:postgresql://...)
+# - SPRING_DATASOURCE_USERNAME
+# - SPRING_DATASOURCE_PASSWORD
+# - KEYCLOAK_ISSUER_URI              (must match token `iss` exactly)
+# - KAFKA_BOOTSTRAP_SERVERS
+#
+# OPTIONAL environment variables:
+# - KEYCLOAK_JWK_SET_URI             (override only if issuer host is not reachable)
+# - SERVER_PORT
+# - APP_VERSION
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: auth-service
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:}
+
+management:
+  info:
+    env:
+      enabled: false
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_API_DOCS_ENABLED:false}
+  swagger-ui:
+    enabled: ${SPRINGDOC_SWAGGER_UI_ENABLED:false}
