@@ -1,0 +1,143 @@
+name: Build Services
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+  build-profile-service:
+    name: Build Profile Service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/profile-service
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build Profile Service
+        run: chmod +x ./gradlew && ./gradlew clean build -x test
+
+  build-content-service:
+    name: Build Content Service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/content-service
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build Content Service
+        run: chmod +x ./gradlew && ./gradlew clean build -x test
+
+  build-auth-service:
+    name: Build Auth Service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/auth-service
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build Auth Service
+        run: chmod +x ./gradlew && ./gradlew clean build -x test
+
+  build-asset-service:
+    name: Build Asset Service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/asset-service
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build Asset Service
+        run: chmod +x ./gradlew && ./gradlew clean build -x test
+
+  build-publishing-service:
+    name: Build Publishing Service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/publishing-service
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build Publishing Service
+        run: chmod +x ./gradlew && ./gradlew clean build -x test
+
+  build-scheduler-service:
+    name: Build Scheduler Service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/scheduler-service
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build Scheduler Service
+        run: chmod +x ./gradlew && ./gradlew clean build -x test
+
+  build-api-gateway:
+    name: Build API Gateway
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gateway/api-gateway
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build API Gateway
+        run: chmod +x ./gradlew && ./gradlew clean build -x test
+
