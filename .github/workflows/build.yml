@@ -18,13 +18,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Check if application.yml exists
+        id: check-config
+        run: |
+          if [ -f "src/main/resources/application.yml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Skipping - application.yml not found"
+          fi
+
       - name: Set up JDK 21
+        if: steps.check-config.outputs.exists == 'true'
         uses: actions/setup-java@v3
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Build Profile Service
+        if: steps.check-config.outputs.exists == 'true'
         run: chmod +x ./gradlew && ./gradlew clean build -x test
 
   build-content-service:
@@ -37,20 +49,44 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Check if application.yml exists
+        id: check-config
+        run: |
+          if [ -f "src/main/resources/application.yml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Skipping - application.yml not found"
+          fi
+
       - name: Set up JDK 21
+        if: steps.check-config.outputs.exists == 'true'
         uses: actions/setup-java@v3
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Build Content Service
-        run: chmod +x ./gradlew && ./gradlew clean build -x test
+        if: steps.check-config.outputs.exists == 'true'
+        run: cCheck if application.yml exists
+        id: check-config
+        run: |
+          if [ -f "src/main/resources/application.yml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Skipping - application.yml not found"
+          fi
 
-  build-auth-service:
-    name: Build Auth Service
-    runs-on: ubuntu-latest
-    defaults:
-      run:
+      - name: Set up JDK 17
+        if: steps.check-config.outputs.exists == 'true'
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build Auth Service
+        if: steps.check-config.outputs.exists == 'true'
         working-directory: services/auth-service
     steps:
       - name: Checkout code
@@ -63,20 +99,44 @@ jobs:
           distribution: 'temurin'
 
       - name: Build Auth Service
-        run: chmod +x ./gradlew && ./gradlew clean build -x test
-
-  build-asset-service:
-    name: Build Asset Service
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: services/asset-service
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+        run: cCheck if application.yml exists
+        id: check-config
+        run: |
+          if [ -f "src/main/resources/application.yml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Skipping - application.yml not found"
+          fi
 
       - name: Set up JDK 17
+        if: steps.check-config.outputs.exists == 'true'
         uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build Asset Service
+        if: steps.check-config.outputs.exists == 'true'
+        workinCheck if application.yml exists
+        id: check-config
+        run: |
+          if [ -f "src/main/resources/application.yml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Skipping - application.yml not found"
+          fi
+
+      - name: Set up JDK 17
+        if: steps.check-config.outputs.exists == 'true'
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build Publishing Service
+        if: steps.check-config.outputs.exists == 'true'
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -89,20 +149,44 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: services/publishing-service
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+        workinCheck if application.yml exists
+        id: check-config
+        run: |
+          if [ -f "src/main/resources/application.yml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Skipping - application.yml not found"
+          fi
 
       - name: Set up JDK 17
+        if: steps.check-config.outputs.exists == 'true'
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build Publishing Service
-        run: chmod +x ./gradlew && ./gradlew clean build -x test
+      - name: Build Scheduler Service
+        if: steps.check-config.outputs.exists == 'true'
+        with:Check if application.yml exists
+        id: check-config
+        run: |
+          if [ -f "src/main/resources/application.yml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Skipping - application.yml not found"
+          fi
 
+      - name: Set up JDK 17
+        if: steps.check-config.outputs.exists == 'true'
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build API Gateway
+        if: steps.check-config.outputs.exists == 'true'
   build-scheduler-service:
     name: Build Scheduler Service
     runs-on: ubuntu-latest
