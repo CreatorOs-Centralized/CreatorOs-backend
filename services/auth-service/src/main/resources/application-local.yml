@@ -1,0 +1,46 @@
+# Local developer profile.
+# Safe defaults for a developer machine; override via env vars as needed.
+#
+# Required environment variables (recommended):
+# - SPRING_DATASOURCE_PASSWORD
+# - KEYCLOAK_ISSUER_URI
+# - (optional) KEYCLOAK_JWK_SET_URI
+# - (optional) KAFKA_BOOTSTRAP_SERVERS
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/auth_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    # Do not commit secrets: provide via environment variable / secret manager.
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: auth-service
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # IMPORTANT: issuer-uri must match the token `iss` exactly.
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/creatorOs}
+          # Optional override: where to fetch JWKS from.
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:}
+
+management:
+  info:
+    env:
+      enabled: true
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
