@@ -52,4 +52,25 @@ public class AssetController {
     public ResponseEntity<List<AssetFolder>> getRootFolders(@RequestParam("userId") UUID userId) {
         return ResponseEntity.ok(assetService.getRootFolders(userId));
     }
+
+    @GetMapping("/view/{fileId}")
+    public ResponseEntity<org.springframework.core.io.Resource> viewFile(@PathVariable UUID fileId) throws IOException {
+        org.springframework.core.io.Resource fileResource = assetService.downloadFile(fileId);
+        MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        
+        // Try to determine content type from filename if possible, otherwise default
+        try {
+             if (fileResource.getFilename() != null && fileResource.getFilename().endsWith(".png")) {
+                 mediaType = MediaType.IMAGE_PNG;
+             } else if (fileResource.getFilename() != null && fileResource.getFilename().endsWith(".jpg")) {
+                 mediaType = MediaType.IMAGE_JPEG;
+             }
+        } catch (Exception e) {
+            // ignore
+        }
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .body(fileResource);
+    }
 }

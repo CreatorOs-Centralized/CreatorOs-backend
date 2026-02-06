@@ -5,11 +5,11 @@ services:
     image: postgres:15-alpine
     container_name: asset_service_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: asset_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:${DB_INTERNAL_PORT}"
     volumes:
       - asset_db_data:/var/lib/postgresql/data
 
@@ -17,15 +17,15 @@ services:
     build: ./services/asset-service
     container_name: asset-service
     ports:
-      - "8081:8080"
+      - "${APP_PORT}:${APP_INTERNAL_PORT}"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://asset_db:5432/asset_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
-      - R2_ACCESS_KEY=${R2_ACCESS_KEY}
-      - R2_SECRET_KEY=${R2_SECRET_KEY}
-      - R2_BUCKET_NAME=${R2_BUCKET_NAME}
-      - R2_ENDPOINT=${R2_ENDPOINT}
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - GCP_BUCKET_NAME=${GCP_BUCKET_NAME}
+    volumes:
+      - ${APPDATA}/gcloud:/root/.config/gcloud # Mount gcloud credentials for ADC
     depends_on:
       - asset_db
     restart: always

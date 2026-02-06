@@ -44,7 +44,7 @@ public class MediaMetadata {
 
     private String thumbnailUrl;
 
-    @JdbcTypeCode(SqlTypes.JSON)
+    @org.hibernate.annotations.Type(io.hypersistence.utils.hibernate.type.json.JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> extra;
 
