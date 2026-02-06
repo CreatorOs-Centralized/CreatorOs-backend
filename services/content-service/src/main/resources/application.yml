@@ -1,0 +1,16 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: content-service
+  datasource:
+    url: ${CONTENT_DB_URL:jdbc:postgresql://localhost:5432/content_db}
+    username: ${CONTENT_DB_USERNAME:postgres}
+    password: ${CONTENT_DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    locations: classpath:db/migration
