@@ -94,6 +94,19 @@ Docker Compose expectation:
 
 ## Local stack (docker compose)
 
+### Keycloak realm bootstrap (important for new machines)
+
+This repo includes a dev-only Keycloak realm import at `keycloak/import/creatoros-realm.json`.
+
+When you run `docker compose up` in this folder, the Keycloak container starts with `--import-realm` and will automatically create:
+
+- Realm: `creatorOs`
+- OIDC client: `auth-service` (public client)
+
+So on a fresh PC, you should **not** need to manually create the realm/client in the Keycloak admin console.
+
+Note: users are still created by self-registration in the Keycloak UI (no default users are shipped).
+
 Default ports from `docker-compose.yml`:
 
 - Keycloak UI: `http://localhost:8081`
