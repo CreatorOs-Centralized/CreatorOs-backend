@@ -1,0 +1,59 @@
+services:
+  # PostgreSQL Database for Profile Service
+  profile-db:
+    image: postgres:16-alpine
+    container_name: creatoros-profile-db
+    environment:
+      POSTGRES_DB: creatoros_profile
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"  # Maps container port 5432 to host port 5432
+    volumes:
+      - profile-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d creatoros_profile"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - creatoros-network
+    restart: unless-stopped
+
+  # Profile Service
+  profile-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: creatoros-profile-service
+    environment:
+      DB_HOST: profile-db
+      DB_PORT: 5432
+      DB_NAME: creatoros_profile
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SERVER_PORT: 8082
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "8082:8082"
+    depends_on:
+      profile-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - creatoros-network
+    restart: unless-stopped
+
+volumes:
+  profile-db-data:
+    driver: local
+
+networks:
+  creatoros-network:
+    driver: bridge

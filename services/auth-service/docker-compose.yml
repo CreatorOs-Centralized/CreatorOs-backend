@@ -111,8 +111,11 @@ services:
     command:
       - start-dev
       - --http-port=8080
+      - --import-realm
     ports:
       - "8081:8080"
+    volumes:
+      - ./keycloak/import:/opt/keycloak/data/import:ro
 
 volumes:
   auth_db_data:
