@@ -23,6 +23,7 @@ replay_pid*.log
 /.env
 /.env.*
 *.env
+!.env.example
 /secrets/
 /config/local/
 

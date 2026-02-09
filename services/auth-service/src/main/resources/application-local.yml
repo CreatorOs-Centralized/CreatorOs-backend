@@ -1,20 +1,23 @@
 # Local developer profile.
-# Safe defaults for a developer machine; override via env vars as needed.
+# No hard-coded secrets or local URLs: provide via env vars.
 #
-# Required environment variables (recommended):
+# Required environment variables:
+# - SPRING_DATASOURCE_URL
+# - SPRING_DATASOURCE_USERNAME
 # - SPRING_DATASOURCE_PASSWORD
 # - KEYCLOAK_ISSUER_URI
-# - (optional) KEYCLOAK_JWK_SET_URI
-# - (optional) KAFKA_BOOTSTRAP_SERVERS
+#
+# Optional environment variables:
+# - KEYCLOAK_JWK_SET_URI
+# - KAFKA_BOOTSTRAP_SERVERS
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/auth_db}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    # Do not commit secrets: provide via environment variable / secret manager.
-    password: ${SPRING_DATASOURCE_PASSWORD:}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -26,7 +29,7 @@ spring:
       resourceserver:
         jwt:
           # IMPORTANT: issuer-uri must match the token `iss` exactly.
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/creatorOs}
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
           # Optional override: where to fetch JWKS from.
           jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:}
 
