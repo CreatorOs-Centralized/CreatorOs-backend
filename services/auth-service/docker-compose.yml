@@ -19,7 +19,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     ports:
-      - "9092:9092"
+      - "${KAFKA_HOST_PORT:-9092}:9092"
     volumes:
       - kafka_data:/var/lib/kafka/data
 
@@ -43,11 +43,11 @@ services:
     image: postgres:15-alpine
     container_name: auth_service_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: auth_db
+      POSTGRES_USER: ${AUTH_DB_USER}
+      POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD}
+      POSTGRES_DB: ${AUTH_DB_NAME}
     ports:
-      - "5433:5432"
+      - "${AUTH_DB_HOST_PORT:-5433}:5432"
     volumes:
       - auth_db_data:/var/lib/postgresql/data
 
@@ -62,29 +62,29 @@ services:
       - kafka-init
       - keycloak
     environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_PASSWORD: postgres
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
 
       # IMPORTANT: issuer-uri must match the token `iss` exactly.
       # Tokens obtained from the host via port mapping will use http://localhost:8081/realms/<realm>.
-      KEYCLOAK_ISSUER_URI: http://localhost:8081/realms/${KEYCLOAK_REALM:-creatorOs}
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI}
 
       # JWK Set URI can use the Docker network hostname.
-      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/${KEYCLOAK_REALM:-creatorOs}/protocol/openid-connect/certs
+      KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI}
     ports:
       # Host port 8080 is commonly used by other tools (e.g. Jenkins). Use 8082 by default.
-      - "8082:8080"
+      - "${AUTH_SERVICE_HOST_PORT:-8082}:8080"
 
   keycloak-db:
     image: postgres:15-alpine
     container_name: keycloak_db
     environment:
-      POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD: keycloak
-      POSTGRES_DB: keycloak
+      POSTGRES_USER: ${KEYCLOAK_DB_USER}
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      POSTGRES_DB: ${KEYCLOAK_DB_NAME}
     ports:
-      - "5432:5432"
+      - "${KEYCLOAK_DB_HOST_PORT:-5432}:5432"
     volumes:
       - keycloak_db_data:/var/lib/postgresql/data
 
@@ -96,24 +96,24 @@ services:
     environment:
       # Admin user for the Keycloak UI (development convenience).
       # Change these in real environments.
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
 
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
-      KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: keycloak
+      KC_DB: ${KC_DB}
+      KC_DB_URL: ${KC_DB_URL}
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
 
       # Enable HTTP for local development.
-      KC_HTTP_ENABLED: "true"
-      KC_HOSTNAME_STRICT: "false"
-      KC_PROXY: edge
+      KC_HTTP_ENABLED: "${KC_HTTP_ENABLED}"
+      KC_HOSTNAME_STRICT: "${KC_HOSTNAME_STRICT}"
+      KC_PROXY: ${KC_PROXY}
     command:
       - start-dev
       - --http-port=8080
       - --import-realm
     ports:
-      - "8081:8080"
+      - "${KEYCLOAK_HOST_PORT:-8081}:8080"
     volumes:
       - ./keycloak/import:/opt/keycloak/data/import:ro
 
