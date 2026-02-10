@@ -1,0 +1,28 @@
+{
+  "realm": "creatorOs",
+  "enabled": true,
+  "displayName": "CreatorOS",
+  "loginWithEmailAllowed": true,
+  "registrationAllowed": true,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "duplicateEmailsAllowed": false,
+  "verifyEmail": false,
+  "clients": [
+    {
+      "clientId": "auth-service",
+      "name": "CreatorOS Frontend",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ]
+    }
+  ]
+}

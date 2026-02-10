@@ -17,24 +17,25 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/assets")
 @RequiredArgsConstructor
+@org.springframework.validation.annotation.Validated
 public class AssetController {
 
     private final AssetService assetService;
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MediaFile> uploadFile(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("userId") UUID userId,
-            @RequestParam("folderId") UUID folderId) throws IOException {
+            @RequestParam("file") @jakarta.validation.constraints.NotNull(message = "File is required") MultipartFile file,
+            @RequestParam("userId") @jakarta.validation.constraints.NotNull(message = "User ID is required") UUID userId,
+            @RequestParam("folderId") @jakarta.validation.constraints.NotNull(message = "Folder ID is required") UUID folderId) throws IOException {
         MediaFile uploadedFile = assetService.uploadFile(file, userId, folderId);
         return ResponseEntity.ok(uploadedFile);
     }
 
     @PostMapping("/folders")
     public ResponseEntity<AssetFolder> createFolder(
-            @RequestParam("name") String name,
+            @RequestParam("name") @jakarta.validation.constraints.NotBlank(message = "Folder name cannot be empty") String name,
             @RequestParam(value = "description", required = false) String description,
-            @RequestParam("userId") UUID userId,
+            @RequestParam("userId") @jakarta.validation.constraints.NotNull(message = "User ID is required") UUID userId,
             @RequestParam(value = "parentFolderId", required = false) UUID parentFolderId) {
         AssetFolder folder = assetService.createFolder(name, description, userId, parentFolderId);
         return ResponseEntity.ok(folder);

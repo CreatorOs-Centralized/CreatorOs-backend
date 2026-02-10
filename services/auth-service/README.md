@@ -32,6 +32,8 @@ Supported profiles:
 - `docker` (docker-compose defaults)
 - `prod` (production: **no unsafe defaults**, required env vars)
 
+Note: the `local` profile does not embed localhost URLs/passwords; it expects env vars (same names as `prod`).
+
 ### Required environment variables
 
 Required (always):
@@ -93,6 +95,18 @@ Docker Compose expectation:
 - <b>No cross-service DB joins allowed.</b>
 
 ## Local stack (docker compose)
+
+### Environment file (.env)
+
+This compose setup reads configuration from a local `.env` file (ignored by git) so credentials/URLs/ports are not hard-coded in `docker-compose.yml`.
+
+1. Copy `.env.example` to `.env`
+2. Fill in values (dev defaults are fine)
+3. Run compose from this folder:
+
+```bash
+docker compose up --build
+```
 
 ### Keycloak realm bootstrap (important for new machines)
 
