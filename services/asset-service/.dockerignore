@@ -1,7 +1,42 @@
-.gradle
-build
-out
-.idea
+# Build artifacts
+build/
+target/
+.gradle/
+out/
+
+# IDE files
+.idea/
+.vscode/
 *.iml
-.DS_Store
+*.iws
+*.ipr
+
+# Gradle wrapper jar (will be downloaded during build)
+!gradle/wrapper/gradle-wrapper.jar
+
+# Test files
+src/test/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+README.md
+
+# Environment files
+.env
+.env.local
+
+# Logs
+*.log
+logs/
+
+# GCP credentials
 gcp-key.json
+gcp-credentials.json
+
+# OS files
+.DS_Store
+Thumbs.db

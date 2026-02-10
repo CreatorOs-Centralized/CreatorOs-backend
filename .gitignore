@@ -47,7 +47,16 @@ logs/
 .env
 .env.*
 *.env
+!.env.example
 *.pem
+*.key
+*-key.json
+gcp-credentials.json
+gcp-key.json
+
+## Docker
+docker-compose.override.yml
+.dockerignore.local
 *.key
 *.crt
 *.p12

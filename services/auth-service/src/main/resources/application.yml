@@ -1,11 +1,7 @@
 spring:
   application:
     name: auth-service
-  # IMPORTANT: Always set an explicit profile via SPRING_PROFILES_ACTIVE.
-  # Supported profiles:
-  # - local: developer workstation defaults
-  # - docker: docker-compose defaults
-  # - prod: production (no unsafe defaults; env vars required)
+
   jpa:
     open-in-view: false
     hibernate:
@@ -26,7 +22,7 @@ logging:
     level: "%5p [traceId=%X{traceId:-} spanId=%X{spanId:-} requestId=%X{requestId:-} userId=%X{userId:-}]"
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVICE_PORT:8081}
 
 management:
   endpoints:
