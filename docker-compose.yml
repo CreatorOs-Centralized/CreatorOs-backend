@@ -1,62 +1,266 @@
-version: '3.8'
-
 services:
-  asset_db:
+  # ========================================
+  # Infrastructure Services
+  # ========================================
+  
+  # PostgreSQL Database
+  postgres:
     image: postgres:15-alpine
-    container_name: asset_service_db
+    container_name: creatoros_postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_MULTIPLE_DATABASES: ${POSTGRES_DBS}
     ports:
-      - "${DB_PORT}:${DB_INTERNAL_PORT}"
+      - "${POSTGRES_PORT}:5432"
     volumes:
-      - asset_db_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - creatoros-network
 
-  asset-service:
-    build: ./services/asset-service
-    container_name: asset-service
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: creatoros_redis
     ports:
-      - "${APP_PORT}:${APP_INTERNAL_PORT}"
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - creatoros-network
+
+  # Kafka Zookeeper
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: creatoros_zookeeper
     environment:
-      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "${ZOOKEEPER_PORT}:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - creatoros-network
+
+  # Kafka Broker
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: creatoros_kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "${KAFKA_PORT}:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:${KAFKA_PORT}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - creatoros-network
+
+  # ========================================
+  # Application Services
+  # ========================================
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8081
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/auth_db
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
-      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
-      - GCP_BUCKET_NAME=${GCP_BUCKET_NAME}
-    volumes:
-      - ${APPDATA}/gcloud:/root/.config/gcloud # Mount gcloud credentials for ADC
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - KEYCLOAK_ISSUER_URI=${KEYCLOAK_ISSUER_URI}
+      - KEYCLOAK_JWK_SET_URI=${KEYCLOAK_JWK_SET_URI}
+    ports:
+      - "${AUTH_SERVICE_PORT}:8081"
     depends_on:
-      - asset_db
-    restart: always
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - creatoros-network
 
-  analytics_db:
-    image: postgres:15-alpine
-    container_name: analytics_service_db
+  # # Profile Service
+  profile-service:
+    build:
+      context: ./services/profile-service
+      dockerfile: Dockerfile
+    container_name: profile-service
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${ANALYTICS_DB}
+      - SERVER_PORT=8082
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=profile_db
+      - DB_USERNAME=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
     ports:
-      - "${ANALYTICS_DB_PORT}:${DB_INTERNAL_PORT}"
-    volumes:
-      - analytics_db_data:/var/lib/postgresql/data
+      - "${PROFILE_SERVICE_PORT}:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - creatoros-network
 
-  analytics-service:
-    build: ./services/analytics-service
-    container_name: analytics-service
-    ports:
-      - "${ANALYTICS_APP_PORT}:${APP_INTERNAL_PORT}"
+  # # Content Service
+  content-service:
+    build:
+      context: ./services/content-service
+      dockerfile: Dockerfile
+    container_name: content-service
     environment:
-      - SPRING_DATASOURCE_URL=${ANALYTICS_DATASOURCE_URL}
-      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SERVER_PORT=8083
+      - CONTENT_DB_URL=jdbc:postgresql://postgres:5432/content_db
+      - CONTENT_DB_USERNAME=${POSTGRES_USER}
+      - CONTENT_DB_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "${CONTENT_SERVICE_PORT}:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - creatoros-network
+
+  # # Asset Service
+  # asset-service:
+  #   build:
+  #     context: ./services/asset-service
+  #     dockerfile: Dockerfile
+  #   container_name: asset-service
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/asset_db
+  #     - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+  #     - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+  #     - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+  #     - GCP_BUCKET_NAME=${GCP_BUCKET_NAME}
+  #   ports:
+  #     - "${ASSET_SERVICE_PORT}:8084"
+  #   volumes:
+  #     - ${GCP_CREDENTIALS_PATH}:/app/gcp-credentials.json:ro
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+  #   networks:
+  #     - creatoros-network
+
+  # Publishing Service
+  publishing-service:
+    build:
+      context: ./services/publishing-service
+      dockerfile: Dockerfile
+    container_name: publishing-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/publishing_db
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
-      - FRONTEND_URL=${FRONTEND_URL}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
+      - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}
+      - LINKEDIN_REDIRECT_URI=${LINKEDIN_REDIRECT_URI}
+    ports:
+      - "${PUBLISHING_SERVICE_PORT}:8085"
     depends_on:
-      - analytics_db
-    restart: always
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - creatoros-network
+
+  # Scheduler Service
+  # scheduler-service:
+  #   build:
+  #     context: ./services/scheduler-service
+  #     dockerfile: Dockerfile
+  #   container_name: scheduler-service
+  #   environment:
+  #     - SERVER_PORT=8086
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/scheduler_db
+  #     - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+  #     - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+  #     - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+  #   ports:
+  #     - "${SCHEDULER_SERVICE_PORT}:8086"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+  #   networks:
+  #     - creatoros-network
+
+  # # API Gateway
+  # api-gateway:
+  #   build:
+  #     context: ./gateway/api-gateway
+  #     dockerfile: Dockerfile
+  #   container_name: api-gateway
+  #   environment:
+  #     - SERVER_PORT=8080
+  #     - AUTH_SERVICE_URL=http://auth-service:8080
+  #     - PROFILE_SERVICE_URL=http://profile-service:8082
+  #     - CONTENT_SERVICE_URL=http://content-service:8083
+  #     - ASSET_SERVICE_URL=http://asset-service:8084
+  #     - PUBLISHING_SERVICE_URL=http://publishing-service:8085
+  #     - SCHEDULER_SERVICE_URL=http://scheduler-service:8086
+  #   ports:
+  #     - "${API_GATEWAY_PORT}:8080"
+  #   depends_on:
+  #     - auth-service
+  #     - profile-service
+  #     - content-service
+  #     - asset-service
+  #     - publishing-service
+  #     - scheduler-service
+  #   restart: unless-stopped
+  #   networks:
+  #     - creatoros-network
 
 volumes:
-  asset_db_data:
-  analytics_db_data:
+  postgres_data:
+  redis_data:
+  zookeeper_data:
+  zookeeper_logs:
+  kafka_data:
+
+networks:
+  creatoros-network:
+    driver: bridge

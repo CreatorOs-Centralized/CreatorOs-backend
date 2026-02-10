@@ -14,3 +14,12 @@ spring:
     open-in-view: false
   flyway:
     locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

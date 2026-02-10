@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: publishing-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/publishing_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 20
+          fetch_size: 50
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      bootstrap-servers: localhost:9092
+      group-id: publishing-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.creatoros.publishing.models
+        spring.json.value.default.type: com.creatoros.publishing.models.PublishRequestEvent
+        spring.json.use.type.headers: false
+server:
+  port: 8085
+
+linkedin:
+  client-id: ${LINKEDIN_CLIENT_ID}
+  client-secret: ${LINKEDIN_CLIENT_SECRET}
+  redirect-uri: ${LINKEDIN_REDIRECT_URI:http://localhost:8085/api/oauth/linkedin/callback}
+  auth-url: https://www.linkedin.com/oauth/v2/authorization
+  token-url: https://www.linkedin.com/oauth/v2/accessToken
+  api-base-url: https://api.linkedin.com/v2
+
+logging:
+  level:
+    root: INFO
+    com.creatoros: DEBUG
