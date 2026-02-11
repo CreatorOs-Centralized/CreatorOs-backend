@@ -24,7 +24,7 @@ logging:
     level: "%5p [traceId=%X{traceId:-} spanId=%X{spanId:-} requestId=%X{requestId:-} userId=%X{userId:-}]"
 
 server:
-  port: ${SERVICE_PORT:8087}
+  port: ${SERVER_PORT:8089}
 
 management:
   endpoints:

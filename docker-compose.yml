@@ -280,7 +280,7 @@ services:
     container_name: notification-service
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - SERVER_PORT=8087
+      - SERVER_PORT=8089
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/notification_db
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
@@ -289,7 +289,7 @@ services:
       - MAILERSEND_FROM_EMAIL=${MAILERSEND_FROM_EMAIL}
       - MAILERSEND_FROM_NAME=${MAILERSEND_FROM_NAME}
     ports:
-      - "${NOTIFICATION_SERVICE_PORT}:8087"
+      - "${NOTIFICATION_SERVICE_PORT}:8089"
     depends_on:
       postgres:
         condition: service_healthy
