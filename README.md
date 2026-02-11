@@ -6,7 +6,7 @@ A scalable microservices-based backend system for the CreatorOS platform, featur
 
 CreatorOS Backend is a comprehensive backend infrastructure providing:
 
-- **7 Microservices** for different business domains
+- **8 Microservices** for different business domains
 - **Event-Driven Architecture** using Kafka
 - **PostgreSQL Database** with multi-database setup
 - **Redis Caching** for performance
@@ -117,6 +117,7 @@ docker-compose ps
 | **Asset Service** | 8084 | File uploads & GCS integration | asset_db |
 | **Publishing Service** | 8085 | Social media publishing | publishing_db |
 | **Scheduler Service** | 8086 | Task scheduling | scheduler_db |
+| **Analytics Service** | 8087 | Platform analytics & metrics | analytics_db |
 
 ### Infrastructure Services
 
@@ -226,6 +227,7 @@ All configuration is driven by `.env` file:
 - `ASSET_SERVICE_PORT` - Asset Service port (default: 8084)
 - `PUBLISHING_SERVICE_PORT` - Publishing Service port (default: 8085)
 - `SCHEDULER_SERVICE_PORT` - Scheduler Service port (default: 8086)
+- `ANALYTICS_SERVICE_PORT` - Analytics Service port (default: 8087)
 
 **External Services:**
 - `GCP_PROJECT_ID` - Google Cloud Project ID
@@ -286,6 +288,7 @@ All services have separate databases:
 - `asset_db` - Asset Service
 - `publishing_db` - Publishing Service
 - `scheduler_db` - Scheduler Service
+- `analytics_db` - Analytics Service
 
 Databases are automatically created and migrated on first startup.
 
@@ -532,7 +535,8 @@ CreatorOS-Backend/
 │   ├── content-service/
 │   ├── asset-service/
 │   ├── publishing-service/
-│   └── scheduler-service/
+│   ├── scheduler-service/
+│   └── analytics-service/
 ├── shared/                     # Shared libraries
 │   ├── api-contracts/
 │   ├── common/

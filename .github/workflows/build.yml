@@ -227,3 +227,34 @@ jobs:
         if: steps.check-config.outputs.exists == 'true'
         run: chmod +x ./gradlew && ./gradlew clean build -x test
 
+  build-analytics-service:
+    name: Build Analytics Service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/analytics-service
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Check if application.properties exists
+        id: check-config
+        run: |
+          if [ -f "src/main/resources/application.properties" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Skipping - application.properties not found"
+          fi
+
+      - name: Set up JDK 21
+        if: steps.check-config.outputs.exists == 'true'
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build Analytics Service
+        if: steps.check-config.outputs.exists == 'true'
+        run: chmod +x ./gradlew && ./gradlew clean build -x test
+
