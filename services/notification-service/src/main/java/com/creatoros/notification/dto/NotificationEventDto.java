@@ -1,0 +1,12 @@
+package com.creatoros.notification.dto;
+
+import java.util.Map;
+import java.util.UUID;
+
+public record NotificationEventDto(
+        UUID userId,
+        String email,
+        String eventType,
+        Map<String, Object> metadata
+) {
+}

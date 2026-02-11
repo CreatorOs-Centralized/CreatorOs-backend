@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: notification-service
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  kafka:
+    listener:
+      missing-topics-fatal: false
+
+logging:
+  pattern:
+    level: "%5p [traceId=%X{traceId:-} spanId=%X{spanId:-} requestId=%X{requestId:-} userId=%X{userId:-}]"
+
+server:
+  port: ${SERVICE_PORT:8087}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+  info:
+    env:
+      enabled: false
+
+info:
+  app:
+    name: ${spring.application.name}
+    version: ${APP_VERSION:0.0.1-SNAPSHOT}
+
+creatoros:
+  kafka:
+    topics:
+      publish-succeeded: ${KAFKA_TOPIC_PUBLISH_SUCCEEDED:publish.succeeded}
+      publish-failed: ${KAFKA_TOPIC_PUBLISH_FAILED:publish.failed}
+      publish-retry-requested: ${KAFKA_TOPIC_PUBLISH_RETRY_REQUESTED:publish.retry.requested}
+      notification-send-requested: ${KAFKA_TOPIC_NOTIFICATION_SEND_REQUESTED:notification.send.requested}
+
+  mailersend:
+    token: ${MAILERSEND_TOKEN:}
+    from:
+      email: ${MAILERSEND_FROM_EMAIL:}
+      name: ${MAILERSEND_FROM_NAME:CreatorOS}
