@@ -4,7 +4,10 @@ import com.creatoros.publishing.entities.ConnectedAccount;
 import com.creatoros.publishing.repositories.ConnectedAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
@@ -33,46 +36,74 @@ public class LinkedInOAuthService {
     @Value("${linkedin.api-base-url}")
     private String apiBaseUrl;
 
+    /**
+     * STEP 1 — Build Authorization URL
+     */
     public String buildAuthorizationUrl() {
         return "https://www.linkedin.com/oauth/v2/authorization"
                 + "?response_type=code"
                 + "&client_id=" + clientId
                 + "&redirect_uri=" + redirectUri
-                + "&scope=w_member_social";
+                + "&scope=openid%20profile%20email%20w_member_social&state=random_state_value";
     }
 
+    /**
+     * STEP 2 — Handle OAuth Callback
+     */
     public void handleCallback(String code) {
-        // 1️⃣ Exchange code → access token
-        @SuppressWarnings("unchecked")
-        Map<String, Object> tokenResponse = restTemplate.postForObject(
-                tokenUrl
-                        + "?grant_type=authorization_code"
-                        + "&code=" + code
-                        + "&redirect_uri=" + redirectUri
-                        + "&client_id=" + clientId
-                        + "&client_secret=" + clientSecret,
-                null,
+
+        // Exchange authorization code for access token
+        HttpHeaders tokenHeaders = new HttpHeaders();
+        tokenHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", "authorization_code");
+        body.add("code", code);
+        body.add("redirect_uri", redirectUri);
+        body.add("client_id", clientId);
+        body.add("client_secret", clientSecret);
+
+        HttpEntity<MultiValueMap<String, String>> tokenRequest =
+                new HttpEntity<>(body, tokenHeaders);
+
+        ResponseEntity<Map> tokenResponse = restTemplate.exchange(
+                tokenUrl,
+                HttpMethod.POST,
+                tokenRequest,
                 Map.class
         );
 
-        String accessToken = (String) tokenResponse.get("access_token");
+        String accessToken = (String) tokenResponse.getBody().get("access_token");
 
-        // 2️⃣ Fetch author URN
-        @SuppressWarnings("unchecked")
-        Map<String, Object> profile = restTemplate.getForObject(
-                apiBaseUrl + "/me?oauth2_access_token=" + accessToken,
+        // Fetch LinkedIn profile using OpenID Connect userinfo endpoint
+        HttpHeaders profileHeaders = new HttpHeaders();
+        profileHeaders.setBearerAuth(accessToken);
+        profileHeaders.set("Accept", "application/json");
+        profileHeaders.set("Accept-Language", "en-US");
+
+        HttpEntity<String> entity = new HttpEntity<>(profileHeaders);
+
+        // Use OpenID Connect endpoint instead of REST API
+        ResponseEntity<Map> response = restTemplate.exchange(
+                "https://api.linkedin.com/v2/userinfo",
+                HttpMethod.GET,
+                entity,
                 Map.class
         );
 
-        String authorUrn = "urn:li:person:" + profile.get("id");
+        Map<String, Object> profile = response.getBody();
+        String linkedinId = (String) profile.get("sub");  // OpenID Connect uses 'sub' for user ID
+        String email = (String) profile.get("email");
+        String name = (String) profile.get("name");
+        String authorUrn = linkedinId;  // userinfo already returns the URN
 
-        // 3️⃣ Save connected account
+        // Save connected account
         ConnectedAccount account = ConnectedAccount.builder()
                 .userId(mockUserId())
                 .platform("LINKEDIN")
                 .accountType("PERSONAL")
-                .accountName("LinkedIn Account")
-                .platformAccountId((String) profile.get("id"))
+                .accountName(name != null ? name : "LinkedIn Account")
+                .platformAccountId(linkedinId)
                 .linkedinAuthorUrn(authorUrn)
                 .accessTokenEnc(accessToken)
                 .isActive(true)
