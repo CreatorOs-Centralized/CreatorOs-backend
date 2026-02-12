@@ -16,4 +16,6 @@ public interface ConnectedAccountRepository extends JpaRepository<ConnectedAccou
     Optional<ConnectedAccount> findByUserIdAndPlatform(UUID userId, String platform);
     
     List<ConnectedAccount> findByUserIdAndIsActiveTrue(UUID userId);
+    
+    List<ConnectedAccount> findByPlatform(String platform);
 }
