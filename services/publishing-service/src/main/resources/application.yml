@@ -1,6 +1,11 @@
 spring:
   application:
     name: publishing-service
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+      enabled: true
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/publishing_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
@@ -36,10 +41,23 @@ server:
 linkedin:
   client-id: ${LINKEDIN_CLIENT_ID}
   client-secret: ${LINKEDIN_CLIENT_SECRET}
-  redirect-uri: ${LINKEDIN_REDIRECT_URI:http://localhost:8085/api/oauth/linkedin/callback}
+  redirect-uri: ${LINKEDIN_REDIRECT_URI}
   auth-url: https://www.linkedin.com/oauth/v2/authorization
   token-url: https://www.linkedin.com/oauth/v2/accessToken
   api-base-url: https://api.linkedin.com/v2
+
+youtube:
+  client-id: ${YOUTUBE_CLIENT_ID}
+  client-secret: ${YOUTUBE_CLIENT_SECRET}
+  redirect-uri: ${YOUTUBE_REDIRECT_URI}
+  auth-url: https://accounts.google.com/o/oauth2/v2/auth
+  token-url: https://oauth2.googleapis.com/token
+  api-base-url: https://www.googleapis.com/youtube/v3
+
+gcp:
+  project-id: ${GCP_PROJECT_ID}
+  bucket-name: ${GCP_BUCKET_NAME}
+  credentials-path: ${GCP_CREDENTIALS_PATH}
 
 logging:
   level:
