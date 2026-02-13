@@ -38,6 +38,7 @@ public class ScheduledJob {
     private String status; // PENDING, TRIGGERED, FAILED
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer retryCount = 0;
 
     @Column(nullable = false)

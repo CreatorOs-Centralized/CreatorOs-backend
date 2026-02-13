@@ -21,5 +21,7 @@ CREATE DATABASE notification_db;
 -- Create scheduler_db
 CREATE DATABASE scheduler_db;
 
+-- Create analytics_db
+CREATE DATABASE analytics_db;
 -- Note: Extensions like pgcrypto will be created by Flyway migrations
 -- when each service starts and runs its migrations
