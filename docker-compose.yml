@@ -212,27 +212,27 @@ services:
       - creatoros-network
 
   # Scheduler Service
-  # scheduler-service:
-  #   build:
-  #     context: ./services/scheduler-service
-  #     dockerfile: Dockerfile
-  #   container_name: scheduler-service
-  #   environment:
-  #     - SERVER_PORT=8086
-  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/scheduler_db
-  #     - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
-  #     - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
-  #     - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-  #   ports:
-  #     - "${SCHEDULER_SERVICE_PORT}:8086"
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     kafka:
-  #       condition: service_healthy
-  #   restart: unless-stopped
-  #   networks:
-  #     - creatoros-network
+  scheduler-service:
+    build:
+      context: ./services/scheduler-service
+      dockerfile: Dockerfile
+    container_name: scheduler-service
+    environment:
+      - SERVER_PORT=8086
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/scheduler_db
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    ports:
+      - "${SCHEDULER_SERVICE_PORT}:8086"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - creatoros-network
 
   # Analytics Service
   analytics-service:
