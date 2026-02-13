@@ -1,4 +1,4 @@
-FROM gradle:8.8.0-jdk17 AS builder
+FROM gradle:8.8.0-jdk21 AS builder
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ RUN gradle dependencies --no-daemon || true
 COPY src src/
 RUN gradle clean bootJar -x test --no-daemon
 
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 RUN apk add --no-cache curl
 
