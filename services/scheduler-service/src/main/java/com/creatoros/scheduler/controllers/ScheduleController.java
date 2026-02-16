@@ -13,8 +13,10 @@ public class ScheduleController {
     private final ScheduleService scheduleService;
 
     @PostMapping("/schedule")
-    public String schedule(@RequestBody ScheduleRequest request) {
-        scheduleService.createSchedule(request);
+    public String schedule(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestBody ScheduleRequest request) {
+        scheduleService.createSchedule(userId, request);
         return "Scheduled successfully";
     }
 }

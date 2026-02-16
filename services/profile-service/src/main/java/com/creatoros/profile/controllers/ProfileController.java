@@ -20,9 +20,14 @@ import java.util.UUID;
  * Profile Controller
  * 
  * REST API endpoints for managing creator profiles.
+ * 
+ * NOTE: @RequestMapping is "/" because the API Gateway strips "/profiles" prefix via stripPrefix(1).
+ * External: POST http://localhost:8080/profiles/me
+ * → Gateway strips "/profiles" → Internal: POST /me
+ * → Matches @PostMapping("me")
  */
 @RestController
-@RequestMapping("/profiles")
+@RequestMapping("/")
 @RequiredArgsConstructor
 @Tag(name = "Profile", description = "Creator Profile Management APIs")
 public class ProfileController {

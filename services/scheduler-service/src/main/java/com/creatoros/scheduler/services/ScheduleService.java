@@ -14,10 +14,10 @@ public class ScheduleService {
 
     private final ScheduledJobRepository repository;
 
-    public void createSchedule(ScheduleRequest request) {
+    public void createSchedule(String userId, ScheduleRequest request) {
 
         ScheduledJob job = ScheduledJob.builder()
-                .userId(mockUser())
+                .userId(UUID.fromString(userId))
                 .contentItemId(request.getContentItemId())
                 .connectedAccountId(request.getConnectedAccountId())
                 .platform(request.getPlatform())
@@ -27,9 +27,5 @@ public class ScheduleService {
                 .build();
 
         repository.save(job);
-    }
-
-    private UUID mockUser() {
-        return UUID.fromString("11111111-1111-1111-1111-111111111111");
     }
 }

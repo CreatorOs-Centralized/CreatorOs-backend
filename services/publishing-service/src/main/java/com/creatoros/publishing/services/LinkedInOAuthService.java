@@ -50,7 +50,7 @@ public class LinkedInOAuthService {
     /**
      * STEP 2 — Handle OAuth Callback
      */
-    public void handleCallback(String code) {
+    public void handleCallback(String userId, String code) {
 
         // Exchange authorization code for access token
         HttpHeaders tokenHeaders = new HttpHeaders();
@@ -99,7 +99,7 @@ public class LinkedInOAuthService {
 
         // Save connected account
         ConnectedAccount account = ConnectedAccount.builder()
-                .userId(mockUserId())
+                .userId(UUID.fromString(userId))
                 .platform("LINKEDIN")
                 .accountType("PERSONAL")
                 .accountName(name != null ? name : "LinkedIn Account")
@@ -114,7 +114,4 @@ public class LinkedInOAuthService {
         accountRepository.save(account);
     }
 
-    private UUID mockUserId() {
-        return UUID.fromString("11111111-1111-1111-1111-111111111111");
-    }
 }

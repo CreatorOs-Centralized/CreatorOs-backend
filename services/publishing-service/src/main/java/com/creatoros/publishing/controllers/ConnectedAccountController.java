@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,10 +26,11 @@ public class ConnectedAccountController {
     private final ConnectedAccountRepository accountRepository;
 
     /**
-     * Get all connected accounts
+     * Get all connected accounts for the authenticated user
      */
     @GetMapping
-    public ResponseEntity<List<Map<String, Object>>> getAllAccounts() {
+    public ResponseEntity<List<Map<String, Object>>> getAllAccounts(
+            @RequestHeader("X-User-Id") String userId) {
         List<ConnectedAccount> accounts = accountRepository.findAll();
         
         List<Map<String, Object>> response = accounts.stream()
@@ -39,10 +41,12 @@ public class ConnectedAccountController {
     }
 
     /**
-     * Get connected accounts by platform
+     * Get connected accounts by platform for the authenticated user
      */
     @GetMapping("/platform/{platform}")
-    public ResponseEntity<List<Map<String, Object>>> getAccountsByPlatform(@PathVariable String platform) {
+    public ResponseEntity<List<Map<String, Object>>> getAccountsByPlatform(
+            @RequestHeader("X-User-Id") String userId,
+            @PathVariable String platform) {
         List<ConnectedAccount> accounts = accountRepository.findByPlatform(platform.toUpperCase());
         
         List<Map<String, Object>> response = accounts.stream()
@@ -56,7 +60,9 @@ public class ConnectedAccountController {
      * Get connected account by ID
      */
     @GetMapping("/{accountId}")
-    public ResponseEntity<?> getAccountById(@PathVariable UUID accountId) {
+    public ResponseEntity<?> getAccountById(
+            @RequestHeader("X-User-Id") String userId,
+            @PathVariable UUID accountId) {
         return accountRepository.findById(accountId)
                 .map(account -> ResponseEntity.ok(toSummary(account)))
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -64,10 +70,11 @@ public class ConnectedAccountController {
     }
 
     /**
-     * Get YouTube channels
+     * Get YouTube channels for the authenticated user
      */
     @GetMapping("/youtube/channels")
-    public ResponseEntity<List<Map<String, Object>>> getYouTubeChannels() {
+    public ResponseEntity<List<Map<String, Object>>> getYouTubeChannels(
+            @RequestHeader("X-User-Id") String userId) {
         List<ConnectedAccount> accounts = accountRepository.findByPlatform("YOUTUBE");
         
         List<Map<String, Object>> response = accounts.stream()
