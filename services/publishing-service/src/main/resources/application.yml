@@ -7,9 +7,9 @@ spring:
       max-request-size: 500MB
       enabled: true
   datasource:
-    url: jdbc:postgresql://localhost:5432/publishing_db
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/publishing_db
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -22,12 +22,12 @@ spring:
           batch_size: 20
           fetch_size: 50
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     consumer:
-      bootstrap-servers: localhost:9092
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
       group-id: publishing-service
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
@@ -35,8 +35,9 @@ spring:
         spring.json.trusted.packages: com.creatoros.publishing.models
         spring.json.value.default.type: com.creatoros.publishing.models.PublishRequestEvent
         spring.json.use.type.headers: false
+
 server:
-  port: 8085
+  port: ${SERVER_PORT:8085}
 
 linkedin:
   client-id: ${LINKEDIN_CLIENT_ID}
@@ -61,5 +62,5 @@ gcp:
 
 logging:
   level:
-    root: INFO
+    root: ${LOG_LEVEL:INFO}
     com.creatoros: DEBUG

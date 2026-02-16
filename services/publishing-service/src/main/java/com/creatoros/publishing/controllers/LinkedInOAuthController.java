@@ -4,6 +4,7 @@ import com.creatoros.publishing.services.LinkedInOAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,8 +21,10 @@ public class LinkedInOAuthController {
     }
 
     @GetMapping("/callback")
-    public String callback(@RequestParam String code) {
-        oAuthService.handleCallback(code);
+    public String callback(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestParam String code) {
+        oAuthService.handleCallback(userId, code);
         return "LinkedIn connected successfully";
     }
 }

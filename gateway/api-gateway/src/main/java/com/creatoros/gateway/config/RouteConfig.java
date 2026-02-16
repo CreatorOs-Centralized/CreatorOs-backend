@@ -30,9 +30,6 @@ public class RouteConfig {
     @Value("${services.analytics-service.url:http://localhost:8087}")
     private String analyticsServiceUrl;
 
-    @Value("${services.notification-service.url:http://localhost:8088}")
-    private String notificationServiceUrl;
-
     @Bean
     public RouteLocator customRoutes(RouteLocatorBuilder builder) {
 
@@ -86,12 +83,6 @@ public class RouteConfig {
                         .path("/analytics/**")
                         .filters(f -> f.stripPrefix(1))
                         .uri(analyticsServiceUrl))
-
-                // Notification Service
-                .route("notification-service", r -> r
-                        .path("/notifications/**")
-                        .filters(f -> f.stripPrefix(1))
-                        .uri(notificationServiceUrl))
 
                 .build();
     }

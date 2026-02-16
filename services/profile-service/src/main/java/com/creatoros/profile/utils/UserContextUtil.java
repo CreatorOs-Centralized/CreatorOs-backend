@@ -1,60 +1,39 @@
 package com.creatoros.profile.utils;
 
+import com.creatoros.profile.config.ProfileAuthenticatedUser;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+
 import java.util.UUID;
 
 /**
  * User Context Utility
  * 
- * Utility class for retrieving the current authenticated user's context.
- * 
- * ⚠️ TEMPORARY STUB IMPLEMENTATION
- * This will be replaced with proper JWT token extraction from SecurityContextHolder
- * once authentication service is integrated.
+ * Extracts authenticated user ID from JWT security context.
  */
+@Component
 public class UserContextUtil {
 
-    // TEMP: Mock user ID for development
-    private static final UUID TEMP_USER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
-
     /**
-     * Get the current authenticated user's ID
+     * Get the current authenticated user's ID from security context
      * 
-     * TODO: Replace with proper JWT token extraction
-     * Example implementation:
-     * <pre>
-     * Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-     * JwtAuthenticationToken token = (JwtAuthenticationToken) authentication;
-     * return UUID.fromString(token.getTokenAttributes().get("userId").toString());
-     * </pre>
-     * 
-     * @return User ID of the authenticated user
+     * @return User ID from JWT subject
+     * @throws IllegalArgumentException if no authenticated user found
      */
     public static UUID getCurrentUserId() {
-        // STUB: Returns hardcoded UUID for development
-        return TEMP_USER_ID;
-    }
-
-    /**
-     * Get the current authenticated user's username
-     * 
-     * TODO: Implement proper extraction from authentication context
-     * 
-     * @return Username of the authenticated user
-     */
-    public static String getCurrentUsername() {
-        // STUB: Replace with actual implementation
-        return "test-user";
-    }
-
-    /**
-     * Check if a user is authenticated
-     * 
-     * TODO: Implement proper authentication check
-     * 
-     * @return true if user is authenticated, false otherwise
-     */
-    public static boolean isAuthenticated() {
-        // STUB: Replace with actual implementation
-        return true;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new IllegalArgumentException("No authenticated user found");
+        }
+        
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof ProfileAuthenticatedUser user) {
+            return UUID.fromString(user.getUserId());
+        }
+        
+        throw new IllegalArgumentException("Invalid principal type: " + (principal != null ? principal.getClass() : "null"));
     }
 }
+

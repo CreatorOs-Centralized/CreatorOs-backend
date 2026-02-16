@@ -59,7 +59,7 @@ class AuthControllerContractIT {
                 List.of("leak")
         );
 
-        mockMvc.perform(get("/auth/me")
+        mockMvc.perform(get("/me")
                         .with(authentication(asAuth(jwt))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("user-123"))
@@ -84,7 +84,7 @@ class AuthControllerContractIT {
                 List.of()
         );
 
-        mockMvc.perform(post("/auth/users/sync")
+        mockMvc.perform(post("/users/sync")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("User-Agent", "JUnit")
                         .with(authentication(asAuth(jwt))))
@@ -96,14 +96,14 @@ class AuthControllerContractIT {
                 .andExpect(jsonPath("$.roles", hasItem("creator")));
 
         // Second call should still succeed (idempotent upsert) even if Kafka remains unavailable.
-        mockMvc.perform(post("/auth/users/sync")
+        mockMvc.perform(post("/users/sync")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("User-Agent", "JUnit")
                         .with(authentication(asAuth(jwt))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("user-456"));
 
-        mockMvc.perform(get("/auth/users/user-456/roles")
+        mockMvc.perform(get("/users/user-456/roles")
                         .with(authentication(asAuth(jwt))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].name", hasItem("user")))
