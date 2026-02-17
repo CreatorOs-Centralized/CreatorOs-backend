@@ -37,6 +37,11 @@ public class ContentService {
         return contentItemRepository.findByUserId(userId);
     }
 
+    public ContentItem getContentById(UUID userId, UUID contentId) {
+        return contentItemRepository.findByIdAndUserId(contentId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Content item not found"));
+    }
+
     public ContentItem updateContent(UUID userId, UUID contentId, UpdateContentRequest request) {
         ContentItem item = contentItemRepository.findByIdAndUserId(contentId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Content item not found"));

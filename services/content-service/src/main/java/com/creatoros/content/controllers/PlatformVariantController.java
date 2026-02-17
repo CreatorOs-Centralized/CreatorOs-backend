@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/contents/{contentId}/variants")
+@RequestMapping("/{contentId}/variants")
 @RequiredArgsConstructor
 public class PlatformVariantController {
 

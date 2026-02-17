@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/contents")
+@RequestMapping("/")
 @RequiredArgsConstructor
 public class ContentController {
 
@@ -41,6 +41,12 @@ public class ContentController {
         return contentService.getMyContents(userId).stream()
                 .map(ContentMapper::toResponse)
                 .toList();
+    }
+
+    @GetMapping("/{contentId}")
+    public ContentResponse getById(@PathVariable UUID contentId) {
+        UUID userId = UserContextUtil.getCurrentUserId();
+        return ContentMapper.toResponse(contentService.getContentById(userId, contentId));
     }
 
     @PutMapping("/{contentId}")
