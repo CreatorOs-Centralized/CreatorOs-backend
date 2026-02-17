@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/assets")
+@RequestMapping("/")
 @RequiredArgsConstructor
 @org.springframework.validation.annotation.Validated
 public class AssetController {

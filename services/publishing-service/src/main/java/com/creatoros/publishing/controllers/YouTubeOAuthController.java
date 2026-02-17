@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/oauth/youtube")
+@RequestMapping("/youtube")
 @RequiredArgsConstructor
 @Slf4j
 public class YouTubeOAuthController {

@@ -2,6 +2,7 @@
   "realm": "creatorOs",
   "enabled": true,
   "displayName": "CreatorOS",
+  "accessTokenLifespan": 7200,
   "loginWithEmailAllowed": true,
   "registrationAllowed": true,
   "resetPasswordAllowed": true,
