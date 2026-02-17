@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/contents/{contentId}/versions")
+@RequestMapping("/{contentId}/versions")
 @RequiredArgsConstructor
 public class ContentVersionController {
 

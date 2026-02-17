@@ -18,7 +18,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/connected-accounts")
+@RequestMapping("/")
 @RequiredArgsConstructor
 @Slf4j
 public class ConnectedAccountController {

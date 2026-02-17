@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/contents/{contentId}/workflow")
+@RequestMapping("/{contentId}/workflow")
 @RequiredArgsConstructor
 public class WorkflowController {
 
