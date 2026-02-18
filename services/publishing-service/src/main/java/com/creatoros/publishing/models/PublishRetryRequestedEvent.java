@@ -12,15 +12,13 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PublishSucceededEvent {
+public class PublishRetryRequestedEvent {
 
     private UUID eventId;
     private UUID userId;
     private UUID publishJobId;
     private String platform;
     private String email;
-    private String platformPostId;
-    private String permalink;
-    private LocalDateTime publishedAt;
+    private String reason;
     private LocalDateTime eventCreatedAt;
 }

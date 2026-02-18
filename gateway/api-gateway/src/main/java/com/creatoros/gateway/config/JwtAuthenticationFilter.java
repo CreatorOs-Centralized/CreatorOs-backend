@@ -58,13 +58,19 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
         try {
             String userId = jwtUtil.validateAndExtractUserId(token);
+            String email = jwtUtil.validateAndExtractEmail(token);
 
             log.debug("JWT validated successfully for userId: {}", userId);
 
             // Add user ID to request headers for downstream services
-            ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                    .header("X-User-Id", userId)
-                    .build();
+            ServerHttpRequest.Builder requestBuilder = exchange.getRequest().mutate()
+                    .header("X-User-Id", userId);
+
+            if (email != null && !email.isBlank()) {
+                requestBuilder.header("X-User-Email", email);
+            }
+
+            ServerHttpRequest mutatedRequest = requestBuilder.build();
 
             return chain.filter(exchange.mutate().request(mutatedRequest).build());
 

@@ -17,34 +17,16 @@ public class NotificationKafkaConsumer {
     }
 
     @KafkaListener(
-            topics = "${creatoros.kafka.topics.publish-succeeded:publish.succeeded}",
+            topics = {
+                "${creatoros.kafka.topics.publish-started:publish.started}",
+                "${creatoros.kafka.topics.publish-succeeded:publish.succeeded}",
+                "${creatoros.kafka.topics.publish-failed:publish.failed}",
+                "${creatoros.kafka.topics.publish-retry-requested:publish.retry.requested}",
+                "${creatoros.kafka.topics.notification-send-requested:notification.send.requested}"
+            },
             groupId = "${KAFKA_CONSUMER_GROUP_ID:notification-service}"
     )
-    public void onPublishSucceeded(String message, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
-        consumerService.consume(topic, message);
-    }
-
-    @KafkaListener(
-            topics = "${creatoros.kafka.topics.publish-failed:publish.failed}",
-            groupId = "${KAFKA_CONSUMER_GROUP_ID:notification-service}"
-    )
-    public void onPublishFailed(String message, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
-        consumerService.consume(topic, message);
-    }
-
-    @KafkaListener(
-            topics = "${creatoros.kafka.topics.publish-retry-requested:publish.retry.requested}",
-            groupId = "${KAFKA_CONSUMER_GROUP_ID:notification-service}"
-    )
-    public void onPublishRetryRequested(String message, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
-        consumerService.consume(topic, message);
-    }
-
-    @KafkaListener(
-            topics = "${creatoros.kafka.topics.notification-send-requested:notification.send.requested}",
-            groupId = "${KAFKA_CONSUMER_GROUP_ID:notification-service}"
-    )
-    public void onNotificationSendRequested(String message, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
+        public void onNotificationEvent(String message, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
         consumerService.consume(topic, message);
     }
 }

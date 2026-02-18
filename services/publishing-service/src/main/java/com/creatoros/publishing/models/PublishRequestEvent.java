@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -15,5 +16,13 @@ public class PublishRequestEvent {
     private UUID contentItemId;
     private UUID connectedAccountId;
     private String platform;
+    private String postType;
     private LocalDateTime scheduledAt;
+    private String email;
+    private String title;
+    private String description;
+    private String gcsPath;
+    private String privacyStatus;
+    private List<String> tags;
+    private String categoryId;
 }

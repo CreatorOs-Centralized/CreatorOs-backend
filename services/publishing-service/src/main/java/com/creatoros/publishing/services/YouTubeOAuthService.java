@@ -15,7 +15,14 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 
@@ -42,19 +49,26 @@ public class YouTubeOAuthService {
     @Value("${youtube.auth-url}")
     private String authUrl;
 
+    @Value("${youtube.state-secret}")
+    private String stateSecret;
+
+    @Value("${youtube.state-ttl-seconds:600}")
+    private long stateTtlSeconds;
+
     /**
      * Build YouTube OAuth authorization URL
      * Scopes: youtube.upload (upload videos), youtube.readonly (read channel info), yt-analytics.readonly (analytics)
      */
-    public String buildAuthorizationUrl() {
+    public String buildAuthorizationUrl(String userId) {
+        String state = buildState(userId);
         return authUrl
-                + "?client_id=" + clientId
-                + "&redirect_uri=" + redirectUri
+                + "?client_id=" + urlEncode(clientId)
+                + "&redirect_uri=" + urlEncode(redirectUri)
                 + "&response_type=code"
-                + "&scope=https://www.googleapis.com/auth/youtube.upload+https://www.googleapis.com/auth/youtube.readonly+https://www.googleapis.com/auth/yt-analytics.readonly"
+                + "&scope=" + urlEncode("https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly")
                 + "&access_type=offline"  // Critical: ensures refresh token is returned
                 + "&prompt=consent"       // Forces consent screen to get refresh token
-                + "&state=random_state_value";
+                + "&state=" + urlEncode(state);
     }
 
     /**
@@ -159,5 +173,84 @@ public class YouTubeOAuthService {
         accountRepository.save(account);
         
         log.info("Successfully connected YouTube channel: {}", channelId);
+    }
+
+    public String resolveState(String state) {
+        if (state == null || state.isBlank()) {
+            throw new RuntimeException("Missing OAuth state");
+        }
+
+        String[] parts = state.split("\\.");
+        if (parts.length != 2) {
+            throw new RuntimeException("Invalid OAuth state format");
+        }
+
+        String payload = new String(base64UrlDecode(parts[0]), StandardCharsets.UTF_8);
+        String expectedSignature = hmacSha256Base64Url(payload, stateSecret);
+        if (!MessageDigest.isEqual(base64UrlDecode(parts[1]), base64UrlDecode(expectedSignature))) {
+            throw new RuntimeException("Invalid OAuth state signature");
+        }
+
+        String[] payloadParts = payload.split(":", 2);
+        if (payloadParts.length != 2) {
+            throw new RuntimeException("Invalid OAuth state payload");
+        }
+
+        String userId = payloadParts[0];
+        long issuedAt = parseEpochSeconds(payloadParts[1]);
+        long now = Instant.now().getEpochSecond();
+        if (stateTtlSeconds > 0 && now - issuedAt > stateTtlSeconds) {
+            throw new RuntimeException("OAuth state expired");
+        }
+
+        return userId;
+    }
+
+    private String buildState(String userId) {
+        if (stateSecret == null || stateSecret.isBlank()) {
+            throw new RuntimeException("Missing youtube.state-secret configuration");
+        }
+        if (userId == null || userId.isBlank()) {
+            throw new RuntimeException("Missing userId for OAuth state");
+        }
+
+        long issuedAt = Instant.now().getEpochSecond();
+        String payload = userId + ":" + issuedAt;
+        String signature = hmacSha256Base64Url(payload, stateSecret);
+        return base64UrlEncode(payload) + "." + signature;
+    }
+
+    private static String hmacSha256Base64Url(String payload, String secret) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return base64UrlEncode(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to compute OAuth state signature", ex);
+        }
+    }
+
+    private static long parseEpochSeconds(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException ex) {
+            throw new RuntimeException("Invalid OAuth state timestamp");
+        }
+    }
+
+    private static String urlEncode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private static String base64UrlEncode(String value) {
+        return base64UrlEncode(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static String base64UrlEncode(byte[] value) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(value);
+    }
+
+    private static byte[] base64UrlDecode(String value) {
+        return Base64.getUrlDecoder().decode(value);
     }
 }

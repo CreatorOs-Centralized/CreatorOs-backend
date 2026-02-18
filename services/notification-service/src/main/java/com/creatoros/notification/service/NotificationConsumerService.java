@@ -7,6 +7,7 @@ import com.creatoros.notification.model.NotificationLog;
 import com.creatoros.notification.model.NotificationLogLevel;
 import com.creatoros.notification.model.NotificationQueueItem;
 import com.creatoros.notification.model.NotificationStatus;
+import com.creatoros.notification.model.NotificationTopic;
 import com.creatoros.notification.model.QueueProvider;
 import com.creatoros.notification.repository.NotificationLogRepository;
 import com.creatoros.notification.repository.NotificationQueueRepository;
@@ -21,6 +22,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -56,9 +59,15 @@ public class NotificationConsumerService {
 
     @Transactional
     public void consume(String topic, String rawMessage) {
+        NotificationTopic notificationTopic = NotificationTopic.fromValue(topic);
+        if (notificationTopic == null) {
+            log.warn("kafka_message_skipped topic={} reason=unsupported_topic", topic);
+            return;
+        }
+
         NotificationEventDto dto;
         try {
-            dto = parseEvent(topic, rawMessage);
+            dto = parseEvent(notificationTopic, rawMessage);
         } catch (IllegalArgumentException ex) {
             log.warn("kafka_message_skipped topic={} reason={}", topic, ex.getMessage());
             return;
@@ -70,30 +79,31 @@ public class NotificationConsumerService {
         receivedDetails.put("metadata", dto.metadata());
         receivedDetails.put("email", dto.email());
 
-        String notificationType = dto.eventType() == null || dto.eventType().isBlank() ? topic : dto.eventType();
-
-        String title = switch (topic) {
-            case "publish.succeeded" -> "Publish succeeded";
-            case "publish.failed" -> "Publish failed";
-            case "publish.retry.requested" -> "Publish retry requested";
-            case "notification.send.requested" -> "Notification requested";
-            default -> "Notification";
-        };
-
-        String message = buildMessage(topic, dto);
+        String notificationType = dto.eventType() == null || dto.eventType().isBlank() ? notificationTopic.value() : dto.eventType();
+        String title = buildTitle(notificationTopic, dto);
+        String message = buildMessage(notificationTopic, dto);
 
         NotificationChannel channel = NotificationChannel.EMAIL;
         Notification notification = new Notification(dto.userId(), notificationType, title, message, channel, NotificationStatus.PENDING);
+        notification.setScheduledAt(dto.scheduledAt());
         Notification saved = notificationRepository.save(notification);
 
         logRepository.save(new NotificationLog(saved.getId(), NotificationLogLevel.INFO, "event_received", receivedDetails));
 
+        if (!isPreferenceAllowed(notificationTopic, dto.userId(), dto)) {
+            markNotificationFailed(saved, "notification_suppressed_by_preferences", Map.of(
+                    "topic", topic,
+                    "user_id", dto.userId(),
+                    "reason", "preference_disabled"
+            ));
+            return;
+        }
+
         if (dto.email() == null || dto.email().isBlank()) {
-            saved.setStatus(NotificationStatus.FAILED);
-            Map<String, Object> details = new HashMap<>();
-            details.put("topic", topic);
-            details.put("reason", "missing_email");
-            logRepository.save(new NotificationLog(saved.getId(), NotificationLogLevel.ERROR, "notification_cannot_send_email", details));
+            markNotificationFailed(saved, "notification_cannot_send_email", Map.of(
+                    "topic", topic,
+                    "reason", "missing_email"
+            ));
             return;
         }
 
@@ -101,28 +111,22 @@ public class NotificationConsumerService {
         recipientDetails.put("email", dto.email());
         logRepository.save(new NotificationLog(saved.getId(), NotificationLogLevel.INFO, "recipient_email", recipientDetails));
 
-        // Preferences are persisted here for future use; for now we only enforce email_enabled when present.
-        preferencesRepository.findById(dto.userId()).ifPresent(prefs -> {
-            if (!prefs.isEmailEnabled()) {
-                saved.setStatus(NotificationStatus.FAILED);
-                Map<String, Object> details = new HashMap<>();
-                details.put("topic", topic);
-                details.put("reason", "email_disabled");
-                logRepository.save(new NotificationLog(saved.getId(), NotificationLogLevel.INFO, "notification_email_disabled", details));
-            }
-        });
-
-        if (saved.getStatus() == NotificationStatus.FAILED) {
+        NotificationQueueItem queueItem = new NotificationQueueItem(saved.getId(), QueueProvider.MAILERSEND);
+        if (dto.scheduledAt() != null && dto.scheduledAt().isAfter(OffsetDateTime.now(ZoneOffset.UTC))) {
+            queueItem.setNextRetryAt(dto.scheduledAt());
+            queueRepository.save(queueItem);
+            logRepository.save(new NotificationLog(saved.getId(), NotificationLogLevel.INFO, "notification_scheduled", Map.of(
+                    "scheduled_at", dto.scheduledAt(),
+                    "queue_item_id", queueItem.getId()
+            )));
             return;
         }
 
-        NotificationQueueItem queueItem = new NotificationQueueItem(saved.getId(), QueueProvider.MAILERSEND);
         NotificationQueueItem persistedQueueItem = queueRepository.save(queueItem);
-
         processorService.processQueueItem(persistedQueueItem.getId(), dto.email());
     }
 
-    private NotificationEventDto parseEvent(String topic, String rawMessage) {
+    private NotificationEventDto parseEvent(NotificationTopic topic, String rawMessage) {
         if (rawMessage == null || rawMessage.isBlank()) {
             throw new IllegalArgumentException("empty_message");
         }
@@ -157,11 +161,12 @@ public class NotificationConsumerService {
         }
 
         Map<String, Object> metadata = extractMetadata(root);
+        OffsetDateTime scheduledAt = parseScheduledAt(root, metadata);
         if (eventType == null || eventType.isBlank()) {
-            eventType = topic;
+            eventType = topic.value();
         }
 
-        return new NotificationEventDto(userId, email, eventType, metadata);
+        return new NotificationEventDto(userId, email, eventType, metadata, scheduledAt);
     }
 
     private static String text(JsonNode node, String field) {
@@ -185,12 +190,106 @@ public class NotificationConsumerService {
         map.remove("email");
         map.remove("event_type");
         map.remove("eventType");
+        map.remove("scheduled_at");
+        map.remove("scheduledAt");
         return map;
     }
 
-    private static String buildMessage(String topic, NotificationEventDto dto) {
+    private OffsetDateTime parseScheduledAt(JsonNode root, Map<String, Object> metadata) {
+        String rootScheduledAt = text(root, "scheduled_at");
+        if (rootScheduledAt == null) {
+            rootScheduledAt = text(root, "scheduledAt");
+        }
+
+        if (rootScheduledAt != null && !rootScheduledAt.isBlank()) {
+            return parseIsoDateTime(rootScheduledAt);
+        }
+
+        Object metadataScheduledAt = metadata.get("scheduled_at");
+        if (metadataScheduledAt == null) {
+            metadataScheduledAt = metadata.get("scheduledAt");
+        }
+
+        if (metadataScheduledAt instanceof String scheduledAtString && !scheduledAtString.isBlank()) {
+            return parseIsoDateTime(scheduledAtString);
+        }
+
+        return null;
+    }
+
+    private OffsetDateTime parseIsoDateTime(String value) {
+        try {
+            return OffsetDateTime.parse(value);
+        } catch (RuntimeException ex) {
+            return null;
+        }
+    }
+
+    private boolean isPreferenceAllowed(NotificationTopic topic, UUID userId, NotificationEventDto dto) {
+        return preferencesRepository.findByUserId(userId)
+                .map(prefs -> {
+                    if (!prefs.isEmailEnabled()) {
+                        return false;
+                    }
+                    return switch (topic) {
+                        case PUBLISH_SUCCEEDED -> prefs.isPublishSuccessAlerts();
+                        case PUBLISH_FAILED, PUBLISH_RETRY_REQUESTED -> prefs.isPublishFailureAlerts();
+                        case NOTIFICATION_SEND_REQUESTED -> !isScheduleReminder(dto) || prefs.isScheduleReminders();
+                        case PUBLISH_STARTED -> true;
+                    };
+                })
+                .orElse(true);
+    }
+
+    private boolean isScheduleReminder(NotificationEventDto dto) {
+        if (dto.eventType() != null) {
+            String type = dto.eventType().toLowerCase();
+            if (type.contains("schedule") || type.contains("reminder")) {
+                return true;
+            }
+        }
+
+        Map<String, Object> metadata = Optional.ofNullable(dto.metadata()).orElse(Map.of());
+        Object category = metadata.get("category");
+        if (category instanceof String categoryStr) {
+            String normalized = categoryStr.toLowerCase();
+            if (normalized.contains("schedule") || normalized.contains("reminder")) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void markNotificationFailed(Notification notification, String message, Map<String, Object> details) {
+        notification.setStatus(NotificationStatus.FAILED);
+        logRepository.save(new NotificationLog(notification.getId(), NotificationLogLevel.WARN, message, details));
+    }
+
+    private static String buildTitle(NotificationTopic topic, NotificationEventDto dto) {
+        return switch (topic) {
+            case PUBLISH_STARTED -> "Publish started";
+            case PUBLISH_SUCCEEDED -> "Publish succeeded";
+            case PUBLISH_FAILED -> "Publish failed";
+            case PUBLISH_RETRY_REQUESTED -> "Publish retry requested";
+            case NOTIFICATION_SEND_REQUESTED -> {
+                Map<String, Object> meta = Optional.ofNullable(dto.metadata()).orElse(Map.of());
+                Object title = meta.get("title");
+                yield title == null ? "Notification requested" : String.valueOf(title);
+            }
+        };
+    }
+
+    private static String buildMessage(NotificationTopic topic, NotificationEventDto dto) {
         Map<String, Object> meta = Optional.ofNullable(dto.metadata()).orElse(Map.of());
-        if ("publish.succeeded".equals(topic)) {
+        if (NotificationTopic.PUBLISH_STARTED.equals(topic)) {
+            Object platform = meta.get("platform");
+            if (platform != null) {
+                return "Publishing has started for " + platform + ".";
+            }
+            return "Publishing has started.";
+        }
+        if (NotificationTopic.PUBLISH_SUCCEEDED.equals(topic)) {
             Object platform = meta.get("platform");
             Object permalink = meta.get("permalink");
             if (platform != null && permalink != null) {
@@ -201,7 +300,7 @@ public class NotificationConsumerService {
             }
             return "Your post was published successfully.";
         }
-        if ("publish.failed".equals(topic)) {
+        if (NotificationTopic.PUBLISH_FAILED.equals(topic)) {
             Object platform = meta.get("platform");
             Object error = meta.get("error");
             if (platform != null && error != null) {
@@ -209,10 +308,10 @@ public class NotificationConsumerService {
             }
             return "Publishing failed.";
         }
-        if ("publish.retry.requested".equals(topic)) {
+        if (NotificationTopic.PUBLISH_RETRY_REQUESTED.equals(topic)) {
             return "A publish retry was requested.";
         }
-        if ("notification.send.requested".equals(topic)) {
+        if (NotificationTopic.NOTIFICATION_SEND_REQUESTED.equals(topic)) {
             Object title = meta.get("title");
             Object message = meta.get("message");
             if (title != null && message != null) {

@@ -108,7 +108,7 @@ public class NotificationProcessorService {
 
             queueItem.setStatus(QueueStatus.RETRY);
             queueItem.setNextRetryAt(nextRetryAt(attempt));
-            notification.setStatus(NotificationStatus.FAILED);
+            notification.setStatus(NotificationStatus.PENDING);
             log.warn("notification_email_failed_will_retry notificationId={} attempts={} nextRetryAt={} error={}", notification.getId(), attempt, queueItem.getNextRetryAt(), errorMessage);
         }
     }

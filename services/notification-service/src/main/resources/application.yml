@@ -24,7 +24,7 @@ logging:
     level: "%5p [traceId=%X{traceId:-} spanId=%X{spanId:-} requestId=%X{requestId:-} userId=%X{userId:-}]"
 
 server:
-  port: ${SERVER_PORT:8089}
+  port: ${SERVER_PORT:8090}
 
 management:
   endpoints:
@@ -48,13 +48,14 @@ info:
 creatoros:
   kafka:
     topics:
+      publish-started: ${KAFKA_TOPIC_PUBLISH_STARTED:publish.started}
       publish-succeeded: ${KAFKA_TOPIC_PUBLISH_SUCCEEDED:publish.succeeded}
       publish-failed: ${KAFKA_TOPIC_PUBLISH_FAILED:publish.failed}
       publish-retry-requested: ${KAFKA_TOPIC_PUBLISH_RETRY_REQUESTED:publish.retry.requested}
       notification-send-requested: ${KAFKA_TOPIC_NOTIFICATION_SEND_REQUESTED:notification.send.requested}
 
   mailersend:
-    token: ${MAILERSEND_TOKEN:}
+    token: ${MAILERSEND_TOKEN:mlsn.d7be75c3201ce89e059acd3bd1ea6a14ecd7e27b645396b4da651bbe4e1aed3b}
     from:
-      email: ${MAILERSEND_FROM_EMAIL:}
+      email: ${MAILERSEND_FROM_EMAIL:MS_ZeAPlg@adharbattulwar.com}
       name: ${MAILERSEND_FROM_NAME:CreatorOS}

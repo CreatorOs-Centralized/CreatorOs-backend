@@ -2,10 +2,12 @@ package com.creatoros.notification.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.UuidGenerator;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -16,6 +18,11 @@ import java.util.UUID;
 public class UserNotificationPreferences {
 
     @Id
+    @GeneratedValue
+    @UuidGenerator
+    @Column(name = "id", nullable = false)
+    private UUID id;
+
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
@@ -48,6 +55,10 @@ public class UserNotificationPreferences {
 
     public UserNotificationPreferences(UUID userId) {
         this.userId = userId;
+    }
+
+    public UUID getId() {
+        return id;
     }
 
     @PrePersist
