@@ -1,7 +1,10 @@
 package com.creatoros.publishing.entities;
 
 import jakarta.persistence.*;
+import org.hibernate.type.SqlTypes;
+import org.hibernate.annotations.JdbcTypeCode;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -24,11 +27,13 @@ public class PublishJobAttempt {
     @Column(columnDefinition = "TEXT")
     private String errorMessage;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSONB")
-    private String requestPayload;
+    private Map<String, Object> requestPayload;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSONB")
-    private String responsePayload;
+    private Map<String, Object> responsePayload;
 
     private Integer httpStatus;
 
@@ -62,11 +67,11 @@ public class PublishJobAttempt {
     public String getErrorMessage() { return errorMessage; }
     public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
 
-    public String getRequestPayload() { return requestPayload; }
-    public void setRequestPayload(String requestPayload) { this.requestPayload = requestPayload; }
+    public Map<String, Object> getRequestPayload() { return requestPayload; }
+    public void setRequestPayload(Map<String, Object> requestPayload) { this.requestPayload = requestPayload; }
 
-    public String getResponsePayload() { return responsePayload; }
-    public void setResponsePayload(String responsePayload) { this.responsePayload = responsePayload; }
+    public Map<String, Object> getResponsePayload() { return responsePayload; }
+    public void setResponsePayload(Map<String, Object> responsePayload) { this.responsePayload = responsePayload; }
 
     public Integer getHttpStatus() { return httpStatus; }
     public void setHttpStatus(Integer httpStatus) { this.httpStatus = httpStatus; }

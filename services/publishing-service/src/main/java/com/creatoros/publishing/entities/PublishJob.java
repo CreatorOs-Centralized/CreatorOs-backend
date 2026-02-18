@@ -5,8 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.type.SqlTypes;
+import org.hibernate.annotations.JdbcTypeCode;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -56,8 +59,9 @@ public class PublishJob {
     @Column(columnDefinition = "TEXT")
     private String idempotencyKey;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSONB")
-    private String payloadSnapshot;
+    private Map<String, Object> payloadSnapshot;
 
     @Column(columnDefinition = "TEXT")
     private String lastErrorMessage;
