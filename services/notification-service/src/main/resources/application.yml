@@ -55,7 +55,7 @@ creatoros:
       notification-send-requested: ${KAFKA_TOPIC_NOTIFICATION_SEND_REQUESTED:notification.send.requested}
 
   mailersend:
-    token: ${MAILERSEND_TOKEN:mlsn.d7be75c3201ce89e059acd3bd1ea6a14ecd7e27b645396b4da651bbe4e1aed3b}
+    token: ${MAILERSEND_TOKEN}
     from:
-      email: ${MAILERSEND_FROM_EMAIL:MS_ZeAPlg@adharbattulwar.com}
-      name: ${MAILERSEND_FROM_NAME:CreatorOS}
+      email: ${MAILERSEND_FROM_EMAIL}
+      name: ${MAILERSEND_FROM_NAME}
