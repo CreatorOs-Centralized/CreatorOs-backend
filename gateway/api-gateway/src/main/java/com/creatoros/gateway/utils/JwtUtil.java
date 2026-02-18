@@ -30,4 +30,9 @@ public class JwtUtil {
         Jwt jwt = jwtDecoder.decode(token);
         return jwt.getSubject();
     }
+
+    public String validateAndExtractEmail(String token) {
+        Jwt jwt = jwtDecoder.decode(token);
+        return jwt.getClaimAsString("email");
+    }
 }

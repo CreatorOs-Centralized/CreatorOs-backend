@@ -53,8 +53,8 @@ public class YouTubePublisher implements SocialPublisher {
             VideoSnippet snippet = new VideoSnippet();
             snippet.setTitle(getVideoTitle(context));
             snippet.setDescription(getVideoDescription(context));
-            snippet.setTags(Arrays.asList("CreatorOS", "Automated Upload"));
-            snippet.setCategoryId("22"); // 22 = People & Blogs
+            snippet.setTags(getTags(context));
+            snippet.setCategoryId(getCategoryId(context)); // 22 = People & Blogs
             videoMetadata.setSnippet(snippet);
 
             // Status (privacy)
@@ -65,7 +65,7 @@ public class YouTubePublisher implements SocialPublisher {
 
             // Step 4: Get video file from GCS
             // TODO: In real implementation, get GCS path from content service
-            String gcsPath = "videos/" + context.getEvent().getContentItemId() + ".mp4";
+            String gcsPath = getGcsPath(context);
             
             log.info("Fetching video from GCS: {}", gcsPath);
             InputStream videoStream = gcsService.downloadVideo(gcsPath);
@@ -154,6 +154,9 @@ public class YouTubePublisher implements SocialPublisher {
      */
     private String getVideoTitle(PublishContext context) {
         // In production, fetch from content service via contentItemId
+        if (context.getEvent().getTitle() != null && !context.getEvent().getTitle().isBlank()) {
+            return context.getEvent().getTitle();
+        }
         return "Video Title - " + context.getEvent().getContentItemId();
     }
 
@@ -163,6 +166,9 @@ public class YouTubePublisher implements SocialPublisher {
      */
     private String getVideoDescription(PublishContext context) {
         // In production, fetch from content service via contentItemId
+        if (context.getEvent().getDescription() != null && !context.getEvent().getDescription().isBlank()) {
+            return context.getEvent().getDescription();
+        }
         return "Video description goes here.\n\nPublished via CreatorOS";
     }
 
@@ -172,7 +178,31 @@ public class YouTubePublisher implements SocialPublisher {
      */
     private String getPrivacyStatus(PublishContext context) {
         // Options: "public", "unlisted", "private"
+        if (context.getEvent().getPrivacyStatus() != null && !context.getEvent().getPrivacyStatus().isBlank()) {
+            return context.getEvent().getPrivacyStatus();
+        }
         return "public";
+    }
+
+    private List<String> getTags(PublishContext context) {
+        if (context.getEvent().getTags() != null && !context.getEvent().getTags().isEmpty()) {
+            return context.getEvent().getTags();
+        }
+        return Arrays.asList("CreatorOS", "Automated Upload");
+    }
+
+    private String getCategoryId(PublishContext context) {
+        if (context.getEvent().getCategoryId() != null && !context.getEvent().getCategoryId().isBlank()) {
+            return context.getEvent().getCategoryId();
+        }
+        return "22";
+    }
+
+    private String getGcsPath(PublishContext context) {
+        if (context.getEvent().getGcsPath() != null && !context.getEvent().getGcsPath().isBlank()) {
+            return context.getEvent().getGcsPath();
+        }
+        return "videos/" + context.getEvent().getContentItemId() + ".mp4";
     }
 
     /**

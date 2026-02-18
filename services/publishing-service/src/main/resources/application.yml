@@ -54,6 +54,8 @@ youtube:
   auth-url: https://accounts.google.com/o/oauth2/v2/auth
   token-url: https://oauth2.googleapis.com/token
   api-base-url: https://www.googleapis.com/youtube/v3
+  state-secret: ${YOUTUBE_STATE_SECRET}
+  state-ttl-seconds: ${YOUTUBE_STATE_TTL_SECONDS:600}
 
 gcp:
   project-id: ${GCP_PROJECT_ID}

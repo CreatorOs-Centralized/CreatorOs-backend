@@ -25,9 +25,9 @@ public class YouTubeOAuthController {
      * Get YouTube OAuth authorization URL
      */
     @GetMapping("/login")
-    public String login() {
+    public String login(@RequestHeader("X-User-Id") String userId) {
         log.info("Generating YouTube OAuth URL");
-        return oAuthService.buildAuthorizationUrl();
+        return oAuthService.buildAuthorizationUrl(userId);
     }
 
     /**
@@ -35,9 +35,10 @@ public class YouTubeOAuthController {
      */
     @GetMapping("/callback")
     public ResponseEntity<?> callback(
-            @RequestHeader("X-User-Id") String userId,
-            @RequestParam String code) {
+            @RequestParam String code,
+            @RequestParam String state) {
         try {
+            String userId = oAuthService.resolveState(state);
             log.info("Received YouTube OAuth callback for user {}", userId);
             oAuthService.handleCallback(userId, code);
             return ResponseEntity.ok(Map.of(

@@ -2,7 +2,7 @@ services:
   # ========================================
   # Infrastructure Services
   # ========================================
-  
+
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
@@ -77,7 +77,13 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      test:
+        [
+          "CMD",
+          "kafka-broker-api-versions",
+          "--bootstrap-server",
+          "localhost:9092",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -276,6 +282,8 @@ services:
       - YOUTUBE_CLIENT_ID=${YOUTUBE_CLIENT_ID} 
       - YOUTUBE_CLIENT_SECRET=${YOUTUBE_CLIENT_SECRET}
       - YOUTUBE_REDIRECT_URI=${YOUTUBE_REDIRECT_URI}
+      - YOUTUBE_STATE_SECRET=${YOUTUBE_STATE_SECRET}
+      - YOUTUBE_STATE_TTL_SECONDS=${YOUTUBE_STATE_TTL_SECONDS}
       - GCP_PROJECT_ID=${GCP_PROJECT_ID}
       - GCP_BUCKET_NAME=${GCP_BUCKET_NAME}
       - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
@@ -283,6 +291,33 @@ services:
       - ${GCP_CREDENTIALS_PATH}:/app/gcp-credentials.json:ro
     ports:
       - "${PUBLISHING_SERVICE_PORT}:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - creatoros-network
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8090
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/notification_db
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - MAILERSEND_TOKEN=${MAILERSEND_TOKEN}
+      - MAILERSEND_FROM_EMAIL=${MAILERSEND_FROM_EMAIL}
+      - MAILERSEND_FROM_NAME=${MAILERSEND_FROM_NAME}
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT:-8090}:8090"
     depends_on:
       postgres:
         condition: service_healthy
@@ -355,6 +390,8 @@ services:
       - SERVICES_CONTENT_SERVICE_URL=http://content-service:8083
       - SERVICES_ASSET_SERVICE_URL=http://asset-service:8084
       - SERVICES_PUBLISHING_SERVICE_URL=http://publishing-service:8085
+      - SERVICES_NOTIFICATION_SERVICE_URL=http://notification-service:8090
+      - NOTIFICATION_SERVICE_URL=http://notification-service:8090
       - SERVICES_SCHEDULER_SERVICE_URL=http://scheduler-service:8086
       - SERVICES_ANALYTICS_SERVICE_URL=http://analytics-service:8087
     ports:
@@ -364,6 +401,7 @@ services:
       - profile-service
       - content-service
       - publishing-service
+      - notification-service
       - scheduler-service
       - analytics-service
     restart: unless-stopped

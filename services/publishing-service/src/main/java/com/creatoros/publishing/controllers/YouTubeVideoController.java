@@ -2,11 +2,12 @@ package com.creatoros.publishing.controllers;
 
 import com.creatoros.publishing.dto.PublishVideoRequest;
 import com.creatoros.publishing.entities.ConnectedAccount;
+import com.creatoros.publishing.models.PublishRequestEvent;
 import com.creatoros.publishing.models.PublishResult;
 import com.creatoros.publishing.repositories.ConnectedAccountRepository;
+import com.creatoros.publishing.services.PublishExecutionService;
 import com.creatoros.publishing.services.YouTubeAnalyticsService;
 import com.creatoros.publishing.services.YouTubeVideoService;
-import com.creatoros.publishing.strategy.YouTubePublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -33,8 +34,8 @@ public class YouTubeVideoController {
 
     private final YouTubeVideoService youtubeVideoService;
     private final YouTubeAnalyticsService youtubeAnalyticsService;
-    private final YouTubePublisher youtubePublisher;
-    private final ConnectedAccountRepository accountRepository;
+        private final PublishExecutionService publishExecutionService;
+        private final ConnectedAccountRepository accountRepository;
 
     /**
      * Get all videos from a YouTube channel
@@ -301,7 +302,11 @@ public class YouTubeVideoController {
      * }
      */
     @PostMapping("/publish")
-    public ResponseEntity<?> publishVideo(@RequestBody PublishVideoRequest request) {
+    public ResponseEntity<?> publishVideo(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmail,
+            @RequestBody PublishVideoRequest request
+    ) {
         try {
             // Validate request
             if (request.getAccountId() == null) {
@@ -337,20 +342,28 @@ public class YouTubeVideoController {
 
             log.info("Publishing video to YouTube: {}", request.getTitle());
 
-            // Call YouTube publisher
-            PublishResult result = youtubePublisher.publishDirect(
-                    account,
-                    request.getTitle(),
-                    request.getDescription() != null ? request.getDescription() : "",
-                    request.getGcsPath(),
-                    request.getPrivacyStatus(),
-                    request.getTags(),
-                    request.getCategoryId()
-            );
+            PublishRequestEvent event = new PublishRequestEvent();
+            event.setEventId(UUID.randomUUID());
+            event.setUserId(UUID.fromString(userId));
+            event.setConnectedAccountId(request.getAccountId());
+            event.setPlatform("YOUTUBE");
+            event.setPostType("VIDEO");
+            event.setContentItemId(request.getContentItemId() != null ? request.getContentItemId() : UUID.randomUUID());
+            event.setEmail(request.getEmail() != null && !request.getEmail().isBlank() ? request.getEmail() : userEmail);
+            event.setTitle(request.getTitle());
+            event.setDescription(request.getDescription());
+            event.setGcsPath(request.getGcsPath());
+            event.setPrivacyStatus(request.getPrivacyStatus());
+            event.setTags(request.getTags());
+            event.setCategoryId(request.getCategoryId());
+
+            PublishExecutionService.PublishExecutionOutcome outcome = publishExecutionService.executeAndReturn(event);
+            PublishResult result = outcome.result();
 
             if (result.isSuccess()) {
                 return ResponseEntity.ok(Map.of(
                         "success", true,
+                        "publishJobId", outcome.job().getId(),
                         "videoId", result.getPlatformPostId(),
                         "permalink", result.getPermalink(),
                         "message", "Video published successfully"
@@ -359,6 +372,7 @@ public class YouTubeVideoController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of(
                                 "success", false,
+                                                "publishJobId", outcome.job().getId(),
                                 "error", result.getErrorMessage()
                         ));
             }
