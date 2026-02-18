@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * REST API endpoints for managing social links associated with creator profiles.
  */
 @RestController
-@RequestMapping("/profiles/me/social-links")
+@RequestMapping("/me/social-links")
 @RequiredArgsConstructor
 @Tag(name = "Social Links", description = "Social Link Management APIs")
 public class SocialLinkController {

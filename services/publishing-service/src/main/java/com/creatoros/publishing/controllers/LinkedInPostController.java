@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,7 +28,9 @@ public class LinkedInPostController {
      * Get all posts for a connected LinkedIn account
      */
     @GetMapping("/{accountId}")
-    public ResponseEntity<?> getUserPosts(@PathVariable UUID accountId) {
+    public ResponseEntity<?> getUserPosts(
+            @RequestHeader("X-User-Id") String userId,
+            @PathVariable UUID accountId) {
         try {
             log.info("Fetching posts for account: {}", accountId);
             Map<String, Object> posts = linkedinPostService.getUserPosts(accountId);
@@ -48,6 +51,7 @@ public class LinkedInPostController {
      */
     @PostMapping("/{accountId}")
     public ResponseEntity<?> publishPost(
+            @RequestHeader("X-User-Id") String userId,
             @PathVariable UUID accountId,
             @RequestBody Map<String, String> request
     ) {

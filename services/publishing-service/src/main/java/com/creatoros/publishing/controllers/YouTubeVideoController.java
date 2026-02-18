@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,11 +39,13 @@ public class YouTubeVideoController {
     /**
      * Get all videos from a YouTube channel
      * 
+     * @param userId - Authenticated user ID (from X-User-Id header)
      * @param accountId - Connected account ID
      * @param maxResults - Maximum number of videos to fetch (default: 10, max: 50)
      */
     @GetMapping("/accounts/{accountId}/videos")
     public ResponseEntity<?> getChannelVideos(
+            @RequestHeader("X-User-Id") String userId,
             @PathVariable UUID accountId,
             @RequestParam(required = false, defaultValue = "10") Integer maxResults
     ) {
@@ -79,11 +82,13 @@ public class YouTubeVideoController {
     /**
      * Get specific video details by video ID
      * 
+     * @param userId - Authenticated user ID (from X-User-Id header)
      * @param accountId - Connected account ID
      * @param videoId - YouTube video ID
      */
     @GetMapping("/accounts/{accountId}/videos/{videoId}")
     public ResponseEntity<?> getVideoById(
+            @RequestHeader("X-User-Id") String userId,
             @PathVariable UUID accountId,
             @PathVariable String videoId
     ) {
@@ -115,10 +120,13 @@ public class YouTubeVideoController {
     /**
      * Get channel statistics (subscribers, total views, video count)
      * 
+     * @param userId - Authenticated user ID (from X-User-Id header)
      * @param accountId - Connected account ID
      */
     @GetMapping("/accounts/{accountId}/statistics")
-    public ResponseEntity<?> getChannelStatistics(@PathVariable UUID accountId) {
+    public ResponseEntity<?> getChannelStatistics(
+            @RequestHeader("X-User-Id") String userId,
+            @PathVariable UUID accountId) {
         try {
             log.info("Fetching channel statistics for account: {}", accountId);
             Map<String, Object> stats = youtubeVideoService.getChannelStatistics(accountId);
@@ -147,6 +155,7 @@ public class YouTubeVideoController {
     /**
      * Get video analytics for a specific video
      * 
+     * @param userId - Authenticated user ID (from X-User-Id header)
      * @param accountId - Connected account ID
      * @param videoId - YouTube video ID
      * @param startDate - Start date (YYYY-MM-DD), defaults to 30 days ago
@@ -154,6 +163,7 @@ public class YouTubeVideoController {
      */
     @GetMapping("/accounts/{accountId}/videos/{videoId}/analytics")
     public ResponseEntity<?> getVideoAnalytics(
+            @RequestHeader("X-User-Id") String userId,
             @PathVariable UUID accountId,
             @PathVariable String videoId,
             @RequestParam(required = false) String startDate,
@@ -190,12 +200,14 @@ public class YouTubeVideoController {
     /**
      * Get channel analytics for a date range
      * 
+     * @param userId - Authenticated user ID (from X-User-Id header)
      * @param accountId - Connected account ID
      * @param startDate - Start date (YYYY-MM-DD), defaults to 30 days ago
      * @param endDate - End date (YYYY-MM-DD), defaults to today
      */
     @GetMapping("/accounts/{accountId}/analytics")
     public ResponseEntity<?> getChannelAnalytics(
+            @RequestHeader("X-User-Id") String userId,
             @PathVariable UUID accountId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate
@@ -231,6 +243,7 @@ public class YouTubeVideoController {
     /**
      * Get top performing videos for a date range
      * 
+     * @param userId - Authenticated user ID (from X-User-Id header)
      * @param accountId - Connected account ID
      * @param startDate - Start date (YYYY-MM-DD), defaults to 30 days ago
      * @param endDate - End date (YYYY-MM-DD), defaults to today
@@ -238,6 +251,7 @@ public class YouTubeVideoController {
      */
     @GetMapping("/accounts/{accountId}/top-videos")
     public ResponseEntity<?> getTopVideos(
+            @RequestHeader("X-User-Id") String userId,
             @PathVariable UUID accountId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,

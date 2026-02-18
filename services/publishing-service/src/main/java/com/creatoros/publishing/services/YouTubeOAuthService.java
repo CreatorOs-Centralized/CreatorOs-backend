@@ -60,7 +60,7 @@ public class YouTubeOAuthService {
     /**
      * Handle OAuth callback and exchange code for tokens
      */
-    public void handleCallback(String code) {
+    public void handleCallback(String userId, String code) {
         
         log.info("Handling YouTube OAuth callback");
 
@@ -141,7 +141,7 @@ public class YouTubeOAuthService {
 
         // Step 3: Save connected account
         ConnectedAccount account = ConnectedAccount.builder()
-                .userId(mockUserId())  // TODO: Get from JWT
+                .userId(UUID.fromString(userId))
                 .platform("YOUTUBE")
                 .accountType("CHANNEL")
                 .accountName(channelTitle)
@@ -159,9 +159,5 @@ public class YouTubeOAuthService {
         accountRepository.save(account);
         
         log.info("Successfully connected YouTube channel: {}", channelId);
-    }
-
-    private UUID mockUserId() {
-        return UUID.fromString("11111111-1111-1111-1111-111111111111");
     }
 }
