@@ -147,17 +147,27 @@ public class AssetService {
         return String.format("/api/assets/view/%s", fileId);
     }
     
+    public MediaFile getFileMetadata(UUID fileId) {
+        return mediaFileRepository.findById(fileId)
+                .orElseThrow(() -> new RuntimeException("File not found: " + fileId));
+    }
+
     public org.springframework.core.io.Resource downloadFile(UUID fileId) throws IOException {
         MediaFile mediaFile = mediaFileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found: " + fileId));
         
         BlobId blobId = BlobId.of(mediaFile.getBucketName(), mediaFile.getStoragePath());
-        byte[] content = storage.readAllBytes(blobId);
+        com.google.cloud.ReadChannel reader = storage.reader(blobId);
         
-        return new org.springframework.core.io.ByteArrayResource(content) {
+        return new org.springframework.core.io.InputStreamResource(java.nio.channels.Channels.newInputStream(reader)) {
             @Override
             public String getFilename() {
                 return mediaFile.getFileName();
+            }
+            
+            @Override
+            public long contentLength() throws IOException {
+                return mediaFile.getSizeBytes();
             }
         };
     }

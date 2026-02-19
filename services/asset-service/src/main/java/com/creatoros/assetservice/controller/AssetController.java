@@ -54,6 +54,11 @@ public class AssetController {
         return ResponseEntity.ok(assetService.getRootFolders(userId));
     }
 
+    @GetMapping("/{fileId}/metadata")
+    public ResponseEntity<MediaFile> getFileMetadata(@PathVariable UUID fileId) {
+        return ResponseEntity.ok(assetService.getFileMetadata(fileId));
+    }
+
     @GetMapping("/view/{fileId}")
     public ResponseEntity<org.springframework.core.io.Resource> viewFile(@PathVariable UUID fileId) throws IOException {
         org.springframework.core.io.Resource fileResource = assetService.downloadFile(fileId);
