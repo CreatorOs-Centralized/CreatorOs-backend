@@ -1,6 +1,7 @@
 package com.creatoros.auth.model;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,7 +12,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
@@ -26,20 +26,19 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class Role {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false)
-    private Long id;
+    private UUID id;
 
     @Column(name = "name", nullable = false, unique = true, length = 150)
     private String name;
 
+    @Column(name = "description")
+    private String description;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
 
     protected Role() {
     }
@@ -48,7 +47,7 @@ public class Role {
         this.name = name;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
@@ -60,11 +59,16 @@ public class Role {
         this.name = name;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
 }

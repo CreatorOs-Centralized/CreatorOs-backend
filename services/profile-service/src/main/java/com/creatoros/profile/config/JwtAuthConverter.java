@@ -3,7 +3,6 @@ package com.creatoros.profile.config;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,29 +18,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtAuthConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
-    /**
-     * Keycloak JWT expectations for this service:
-     * - This service is a pure OAuth2 Resource Server (validates JWTs), not an auth server.
-     * - userId comes from {@code sub}.
-     * - Roles are accepted ONLY from:
-     *   1) {@code realm_access.roles}
-     *   2) {@code resource_access[azp].roles} where {@code azp} is the token's "authorized party" (client id)
-     *
-     * This avoids accidental role leakage from other Keycloak clients present under {@code resource_access}.
-     */
-
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
-        String userId = jwt.getSubject();
+    String userId = firstNonBlank(jwt.getClaimAsString("user_id"), jwt.getSubject());
         String username = firstNonBlank(
-                jwt.getClaimAsString("preferred_username"),
-                jwt.getClaimAsString("username"),
-                jwt.getClaimAsString("name")
+        jwt.getClaimAsString("username"),
+        jwt.getClaimAsString("preferred_username"),
+        jwt.getClaimAsString("name"),
+        jwt.getClaimAsString("email")
         );
         String email = jwt.getClaimAsString("email");
         String sessionId = firstNonBlank(jwt.getClaimAsString("sid"), jwt.getId());
 
-        Set<String> roles = extractAllowedRoles(jwt);
+    Set<String> roles = extractRoles(jwt);
         Collection<GrantedAuthority> authorities = roles.stream()
                 .filter(Objects::nonNull)
                 .map(String::trim)
@@ -54,40 +43,28 @@ public class JwtAuthConverter implements Converter<Jwt, AbstractAuthenticationTo
         return new UsernamePasswordAuthenticationToken(principal, jwt, authorities);
     }
 
-    private static Set<String> extractAllowedRoles(Jwt jwt) {
+    private static Set<String> extractRoles(Jwt jwt) {
+        Object rawRoles = jwt.getClaims().get("roles");
+        if (rawRoles == null) {
+            return Collections.emptySet();
+        }
+
         LinkedHashSet<String> roles = new LinkedHashSet<>();
-
-        roles.addAll(extractRolesFromClaimPath(jwt.getClaims(), "realm_access", "roles"));
-
-        String azp = jwt.getClaimAsString("azp");
-        if (azp != null && !azp.isBlank()) {
-            Object resourceAccess = jwt.getClaims().get("resource_access");
-            if (resourceAccess instanceof Map<?, ?> resourceAccessMap) {
-                Object clientAccess = resourceAccessMap.get(azp);
-                if (clientAccess instanceof Map<?, ?> clientAccessMap) {
-                    roles.addAll(extractRolesFromClaimPath(clientAccessMap, "roles"));
+        if (rawRoles instanceof Collection<?> roleCollection) {
+            roleCollection.stream()
+                    .filter(Objects::nonNull)
+                    .map(Object::toString)
+                    .forEach(roles::add);
+        } else {
+            String roleString = rawRoles.toString();
+            for (String r : roleString.split(",")) {
+                String trimmed = r.trim();
+                if (!trimmed.isEmpty()) {
+                    roles.add(trimmed);
                 }
             }
         }
-
         return Collections.unmodifiableSet(roles);
-    }
-
-    private static Set<String> extractRolesFromClaimPath(Map<?, ?> root, String... path) {
-        Object current = root;
-        for (int i = 0; i < path.length; i++) {
-            if (!(current instanceof Map<?, ?> currentMap)) {
-                return Collections.emptySet();
-            }
-            current = currentMap.get(path[i]);
-        }
-        if (!(current instanceof Collection<?> roleCollection)) {
-            return Collections.emptySet();
-        }
-        return roleCollection.stream()
-                .filter(Objects::nonNull)
-                .map(Object::toString)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private static String firstNonBlank(String... candidates) {

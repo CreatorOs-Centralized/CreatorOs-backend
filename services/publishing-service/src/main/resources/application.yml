@@ -66,3 +66,12 @@ logging:
   level:
     root: ${LOG_LEVEL:INFO}
     com.creatoros: DEBUG
+
+creatoros:
+  kafka:
+    topics:
+      publish-requested: ${KAFKA_TOPIC_PUBLISH_REQUESTED:publish.requested}
+      publish-started: ${KAFKA_TOPIC_PUBLISH_STARTED:publish.started}
+      publish-succeeded: ${KAFKA_TOPIC_PUBLISH_SUCCEEDED:publish.succeeded}
+      publish-failed: ${KAFKA_TOPIC_PUBLISH_FAILED:publish.failed}
+      publish-retry-requested: ${KAFKA_TOPIC_PUBLISH_RETRY_REQUESTED:publish.retry.requested}

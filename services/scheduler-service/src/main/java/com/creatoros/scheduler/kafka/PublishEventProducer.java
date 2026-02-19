@@ -3,6 +3,7 @@ package com.creatoros.scheduler.kafka;
 import com.creatoros.scheduler.entities.ScheduledJob;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,9 @@ public class PublishEventProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
+    @Value("${creatoros.kafka.topics.publish-requested:publish.requested}")
+    private String publishRequestedTopic;
+
     public void sendPublishRequested(ScheduledJob job) {
 
         Map<String, Object> event = Map.of(
@@ -28,6 +32,6 @@ public class PublishEventProducer {
 
         log.info("Sending publish.requested event for job {}: {}", job.getId(), event);
 
-        kafkaTemplate.send("publish.requested", event);
+        kafkaTemplate.send(publishRequestedTopic, event);
     }
 }

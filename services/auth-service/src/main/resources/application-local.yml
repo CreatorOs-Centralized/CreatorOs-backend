@@ -5,10 +5,11 @@
 # - SPRING_DATASOURCE_URL
 # - SPRING_DATASOURCE_USERNAME
 # - SPRING_DATASOURCE_PASSWORD
-# - KEYCLOAK_ISSUER_URI
+# - JWT_SECRET
+# - ACCESS_TOKEN_EXPIRATION
+# - REFRESH_TOKEN_EXPIRATION
 #
 # Optional environment variables:
-# - KEYCLOAK_JWK_SET_URI
 # - KAFKA_BOOTSTRAP_SERVERS
 spring:
   datasource:
@@ -24,15 +25,6 @@ spring:
     consumer:
       group-id: auth-service
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          # IMPORTANT: issuer-uri must match the token `iss` exactly.
-          issuer-uri: ${KEYCLOAK_ISSUER_URI}
-          # Optional override: where to fetch JWKS from.
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:}
-
 management:
   info:
     env:
@@ -47,3 +39,7 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+
+creatoros:
+  auth:
+    debug-token-response: ${AUTH_DEBUG_TOKEN_RESPONSE:false}
