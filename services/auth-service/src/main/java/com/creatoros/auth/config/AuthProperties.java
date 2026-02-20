@@ -11,11 +11,38 @@ public class AuthProperties {
      */
     private boolean debugTokenResponse;
 
+    /**
+     * Frontend base URL used to build verification links.
+     * Example: http://localhost:5173
+     */
+    private String frontendBaseUrl = "http://localhost:5173";
+
+    /**
+     * Default "From" address for outbound emails.
+     */
+    private String mailFrom = "no-reply@creatoros.local";
+
     public boolean isDebugTokenResponse() {
         return debugTokenResponse;
     }
 
     public void setDebugTokenResponse(boolean debugTokenResponse) {
         this.debugTokenResponse = debugTokenResponse;
+    }
+
+    public String getFrontendBaseUrl() {
+        return frontendBaseUrl;
+    }
+
+    public void setFrontendBaseUrl(String frontendBaseUrl) {
+        this.frontendBaseUrl = frontendBaseUrl;
+    }
+
+    public String getMailFrom() {
+        return mailFrom;
+    }
+
+    public void setMailFrom(String mailFrom) {
+        this.mailFrom = mailFrom;
     }
 }

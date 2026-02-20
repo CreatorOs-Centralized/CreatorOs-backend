@@ -48,6 +48,7 @@ public class AuthService {
     private final RoleService roleService;
     private final SessionService sessionService;
     private final TokenService tokenService;
+    private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final JwtProperties jwtProperties;
@@ -63,6 +64,7 @@ public class AuthService {
             RoleService roleService,
             SessionService sessionService,
             TokenService tokenService,
+            EmailService emailService,
             PasswordEncoder passwordEncoder,
             JwtUtil jwtUtil,
             JwtProperties jwtProperties,
@@ -76,6 +78,7 @@ public class AuthService {
         this.roleService = roleService;
         this.sessionService = sessionService;
         this.tokenService = tokenService;
+        this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.jwtProperties = jwtProperties;
@@ -125,6 +128,7 @@ public class AuthService {
         ));
 
         TokenService.GeneratedToken verification = tokenService.generateEmailVerificationToken(saved, Duration.ofHours(24));
+        emailService.sendEmailVerification(saved, verification.rawToken());
         String raw = authProperties.isDebugTokenResponse() ? verification.rawToken() : null;
 
         return new RegisterResponse(saved.getId().toString(), saved.isEmailVerified(), raw);

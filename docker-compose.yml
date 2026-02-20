@@ -161,15 +161,17 @@ services:
       - KAFKA_TOPIC_AUTH_USER_CREATED=${KAFKA_TOPIC_AUTH_USER_CREATED:-auth.user.created}
       - KAFKA_TOPIC_AUTH_USER_ROLE_UPDATED=${KAFKA_TOPIC_AUTH_USER_ROLE_UPDATED:-auth.user.role-updated}
       - KAFKA_TOPIC_AUTH_USER_DELETED=${KAFKA_TOPIC_AUTH_USER_DELETED:-auth.user.deleted}
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:5173}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      - NOTIFICATION_SERVICE_BASE_URL=${NOTIFICATION_SERVICE_BASE_URL:-http://notification-service:8090}
+      - NOTIFICATION_SERVICE_TOPIC=${NOTIFICATION_SERVICE_TOPIC:-notification.send.requested}
     ports:
       - "${AUTH_SERVICE_PORT}:8081"
     depends_on:
       postgres:
         condition: service_healthy
-      kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_completed_successfully
+      notification-service:
+        condition: service_started
     restart: unless-stopped
     networks:
       - creatoros-network
@@ -311,10 +313,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_completed_successfully
     restart: unless-stopped
     networks:
       - creatoros-network

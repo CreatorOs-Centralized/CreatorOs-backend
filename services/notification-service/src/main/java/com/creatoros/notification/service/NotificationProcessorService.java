@@ -99,6 +99,13 @@ public class NotificationProcessorService {
             details.put("exception", ex.getClass().getName());
             logRepository.save(new NotificationLog(notification.getId(), NotificationLogLevel.ERROR, "email_send_failed", details));
 
+            if (isPermanentFailure(errorMessage)) {
+                queueItem.setStatus(QueueStatus.FAILED);
+                notification.setStatus(NotificationStatus.FAILED);
+                log.warn("notification_email_failed_permanently notificationId={} attempts={} error={}", notification.getId(), attempt, errorMessage);
+                return;
+            }
+
             if (attempt >= maxAttempts) {
                 queueItem.setStatus(QueueStatus.FAILED);
                 notification.setStatus(NotificationStatus.FAILED);
@@ -121,5 +128,25 @@ public class NotificationProcessorService {
 
     private static String safe(String v) {
         return v == null ? "" : v;
+    }
+
+    private static boolean isPermanentFailure(String errorMessage) {
+        if (errorMessage == null || errorMessage.isBlank()) {
+            return false;
+        }
+
+        String msg = errorMessage.toLowerCase();
+
+        // MailerSend trial limitation: retrying will not succeed until account limits change.
+        if (msg.contains("#ms42225") || msg.contains("unique recipients limit")) {
+            return true;
+        }
+
+        // Local configuration issues: retrying won't help.
+        if (msg.contains("missing configured from email") || msg.contains("missing mailersend token") || msg.contains("missing recipient email")) {
+            return true;
+        }
+
+        return false;
     }
 }
