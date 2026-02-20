@@ -5,20 +5,14 @@ import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 @Entity
 @Table(name = "login_sessions")
-@EntityListeners(AuditingEntityListener.class)
 /**
  * Auth-service owned login session record.
  *
@@ -39,17 +33,17 @@ public class LoginSession {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "external_session_id", nullable = false, length = 200)
-    private String externalSessionId;
+    @Column(name = "login_at")
+    private Instant loginAt;
 
-    @Column(name = "revoked", nullable = false)
-    private boolean revoked;
+    @Column(name = "logout_at")
+    private Instant logoutAt;
 
-    @Column(name = "started_at", nullable = false)
-    private Instant startedAt;
+    @Column(name = "is_success", nullable = false)
+    private boolean success = true;
 
-    @Column(name = "ended_at")
-    private Instant endedAt;
+    @Column(name = "failure_reason")
+    private String failureReason;
 
     @Column(name = "ip_address", length = 64)
     private String ipAddress;
@@ -57,23 +51,14 @@ public class LoginSession {
     @Column(name = "user_agent", length = 512)
     private String userAgent;
 
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
-
     protected LoginSession() {
     }
 
-    public LoginSession(UUID id, User user, String externalSessionId, Instant startedAt) {
+    public LoginSession(UUID id, User user, Instant loginAt) {
         this.id = id;
         this.user = user;
-        this.externalSessionId = externalSessionId;
-        this.startedAt = startedAt;
-        this.revoked = false;
+        this.loginAt = loginAt;
+        this.success = true;
     }
 
     public UUID getId() {
@@ -84,25 +69,29 @@ public class LoginSession {
         return user;
     }
 
-    public String getExternalSessionId() {
-        return externalSessionId;
+    public void markLoggedOut(Instant logoutAt) {
+        this.logoutAt = logoutAt;
     }
 
-    public boolean isRevoked() {
-        return revoked;
+    public void markFailure(String reason) {
+        this.success = false;
+        this.failureReason = reason;
     }
 
-    public void revoke(Instant endedAt) {
-        this.revoked = true;
-        this.endedAt = endedAt;
+    public Instant getLoginAt() {
+        return loginAt;
     }
 
-    public Instant getStartedAt() {
-        return startedAt;
+    public Instant getLogoutAt() {
+        return logoutAt;
     }
 
-    public Instant getEndedAt() {
-        return endedAt;
+    public boolean isSuccess() {
+        return success;
+    }
+
+    public String getFailureReason() {
+        return failureReason;
     }
 
     public String getIpAddress() {
@@ -121,11 +110,4 @@ public class LoginSession {
         this.userAgent = userAgent;
     }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
 }

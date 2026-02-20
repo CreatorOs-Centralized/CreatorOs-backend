@@ -1,13 +1,16 @@
 package com.creatoros.gateway.utils;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
-import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class JwtUtil {
@@ -15,17 +18,22 @@ public class JwtUtil {
     private final JwtDecoder jwtDecoder;
 
     public JwtUtil(
-            @Value("${security.jwt.issuer-uri}") String issuerUri,
-            @Value("${security.jwt.jwk-set-uri}") String jwkSetUri
+            @Value("${security.jwt.secret}") String jwtSecret
     ) {
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
-        // Relaxed validation for dev: We trust the signature verification against the JWK Set.
-        // If the signature is valid (signed by our Keycloak), we accept the token regardless of "iss" claim (localhost vs container).
+        SecretKey secretKey = new SecretKeySpec(jwtSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(secretKey)
+                .macAlgorithm(MacAlgorithm.HS256)
+                .build();
+        decoder.setJwtValidator(JwtValidators.createDefault());
         this.jwtDecoder = decoder;
     }
 
     public String validateAndExtractUserId(String token) {
         Jwt jwt = jwtDecoder.decode(token);
+        String userId = jwt.getClaimAsString("user_id");
+        if (userId != null && !userId.isBlank()) {
+            return userId;
+        }
         return jwt.getSubject();
     }
 

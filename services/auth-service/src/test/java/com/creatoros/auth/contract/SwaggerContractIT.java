@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.flyway.enabled=false",
         "springdoc.api-docs.enabled=true",
         "springdoc.swagger-ui.enabled=true",
-        "spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8081/realms/test"
+    "creatoros.security.jwt.secret=01234567890123456789012345678901"
 })
 @AutoConfigureMockMvc
 class SwaggerContractIT {

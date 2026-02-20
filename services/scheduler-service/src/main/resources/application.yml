@@ -26,3 +26,8 @@ logging:
   level:
     root: ${LOG_LEVEL:INFO}
     com.creatoros: DEBUG
+
+creatoros:
+  kafka:
+    topics:
+      publish-requested: ${KAFKA_TOPIC_PUBLISH_REQUESTED:publish.requested}

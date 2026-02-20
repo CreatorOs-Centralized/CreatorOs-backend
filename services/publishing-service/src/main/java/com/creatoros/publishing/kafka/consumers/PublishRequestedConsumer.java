@@ -13,7 +13,7 @@ public class PublishRequestedConsumer {
     private final PublishExecutionService executionService;
 
     @KafkaListener(
-            topics = "publish.requested",
+            topics = "${creatoros.kafka.topics.publish-requested:publish.requested}",
             groupId = "publishing-service"
     )
     public void consume(PublishRequestEvent event) {

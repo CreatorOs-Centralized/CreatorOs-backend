@@ -18,7 +18,7 @@ public class AnalyticsConsumer {
 
     private final AnalyticsProducer analyticsProducer;
 
-    @KafkaListener(topics = "publish.succeeded", groupId = "${spring.application.name}")
+    @KafkaListener(topics = "${creatoros.kafka.topics.publish-succeeded:publish.succeeded}", groupId = "${spring.application.name}")
     public void consumePublishSucceeded(PublishSucceededEvent event) {
         log.info("Received PublishSucceededEvent: {}", event);
 

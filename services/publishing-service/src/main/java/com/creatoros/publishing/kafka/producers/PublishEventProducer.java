@@ -5,6 +5,7 @@ import com.creatoros.publishing.models.PublishRetryRequestedEvent;
 import com.creatoros.publishing.models.PublishStartedEvent;
 import com.creatoros.publishing.models.PublishSucceededEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,18 @@ public class PublishEventProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
+    @Value("${creatoros.kafka.topics.publish-started:publish.started}")
+    private String publishStartedTopic;
+
+    @Value("${creatoros.kafka.topics.publish-succeeded:publish.succeeded}")
+    private String publishSucceededTopic;
+
+    @Value("${creatoros.kafka.topics.publish-failed:publish.failed}")
+    private String publishFailedTopic;
+
+    @Value("${creatoros.kafka.topics.publish-retry-requested:publish.retry.requested}")
+    private String publishRetryRequestedTopic;
+
     public void publishStarted(UUID userId, String email, UUID publishJobId, String platform) {
         PublishStartedEvent event = PublishStartedEvent.builder()
                 .eventId(UUID.randomUUID())
@@ -27,7 +40,7 @@ public class PublishEventProducer {
                 .eventCreatedAt(LocalDateTime.now())
                 .build();
 
-        kafkaTemplate.send("publish.started", event);
+            kafkaTemplate.send(publishStartedTopic, event);
     }
 
     public void publishSuccess(UUID userId, String email, UUID publishJobId, String platform, String platformPostId, String permalink) {
@@ -43,7 +56,7 @@ public class PublishEventProducer {
                 .eventCreatedAt(LocalDateTime.now())
                 .build();
 
-        kafkaTemplate.send("publish.succeeded", event);
+            kafkaTemplate.send(publishSucceededTopic, event);
     }
 
     public void publishFailed(UUID userId, String email, UUID publishJobId, String platform, String error) {
@@ -57,7 +70,7 @@ public class PublishEventProducer {
                 .eventCreatedAt(LocalDateTime.now())
                 .build();
 
-        kafkaTemplate.send("publish.failed", event);
+            kafkaTemplate.send(publishFailedTopic, event);
     }
 
     public void publishRetryRequested(UUID userId, String email, UUID publishJobId, String platform, String reason) {
@@ -71,7 +84,7 @@ public class PublishEventProducer {
                 .eventCreatedAt(LocalDateTime.now())
                 .build();
 
-        kafkaTemplate.send("publish.retry.requested", event);
+            kafkaTemplate.send(publishRetryRequestedTopic, event);
     }
 }
 

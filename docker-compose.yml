@@ -5,7 +5,9 @@ services:
 
   # PostgreSQL Database
   postgres:
-    image: postgres:15-alpine
+    build:
+      context: ./infra/postgres
+      dockerfile: Dockerfile
     container_name: creatoros_postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -15,7 +17,6 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infra/postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
@@ -90,6 +91,33 @@ services:
     networks:
       - creatoros-network
 
+  # DEV helper: creates Kafka topics used by the platform.
+  # Avoids relying on broker auto-create behavior.
+  kafka-init:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: creatoros_kafka_init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        until kafka-topics --bootstrap-server kafka:29092 --list >/dev/null 2>&1; do echo "waiting for kafka..."; sleep 2; done;
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_PUBLISH_REQUESTED:-publish.requested} --partitions 1 --replication-factor 1;
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_PUBLISH_STARTED:-publish.started} --partitions 1 --replication-factor 1;
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_PUBLISH_SUCCEEDED:-publish.succeeded} --partitions 1 --replication-factor 1;
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_PUBLISH_FAILED:-publish.failed} --partitions 1 --replication-factor 1;
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_PUBLISH_RETRY_REQUESTED:-publish.retry.requested} --partitions 1 --replication-factor 1;
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_NOTIFICATION_SEND_REQUESTED:-notification.send.requested} --partitions 1 --replication-factor 1;
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_ANALYTICS_INGEST_REQUESTED:-analytics.ingest.requested} --partitions 1 --replication-factor 1;
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_AUTH_USER_CREATED:-auth.user.created} --partitions 1 --replication-factor 1;
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_AUTH_USER_ROLE_UPDATED:-auth.user.role-updated} --partitions 1 --replication-factor 1;
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_AUTH_USER_DELETED:-auth.user.deleted} --partitions 1 --replication-factor 1;
+        echo "kafka topics ready";
+    networks:
+      - creatoros-network
+    restart: "no"
+
   # Kafka UI - Web Interface for Monitoring Kafka
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -105,60 +133,6 @@ services:
       KAFKA_CLUSTERS_0_JMXPORT: 9999
       KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: kafka-connect
       KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: localhost:8083
-    networks:
-      - creatoros-network
-    restart: unless-stopped
-
-  # Keycloak Database
-  keycloak-db:
-    image: postgres:15-alpine
-    container_name: creatoros_keycloak_db
-    environment:
-      POSTGRES_USER: ${KEYCLOAK_DB_USER}
-      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
-      POSTGRES_DB: ${KEYCLOAK_DB_NAME}
-    ports:
-      - "5434:5432"
-    volumes:
-      - keycloak_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${KEYCLOAK_DB_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - creatoros-network
-
-  # Keycloak Identity Provider
-  keycloak:
-    image: quay.io/keycloak/keycloak:25.0.6
-    container_name: creatoros_keycloak
-    depends_on:
-      keycloak-db:
-        condition: service_healthy
-    environment:
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/${KEYCLOAK_DB_NAME}
-      KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
-      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
-      KC_HTTP_ENABLED: "true"
-      KC_HOSTNAME_STRICT: "false"
-      KC_PROXY: edge
-    command:
-      - start-dev
-      - --http-port=8080
-      - --import-realm
-    ports:
-      - "8089:8080"
-    volumes:
-      - ./services/auth-service/keycloak/import:/opt/keycloak/data/import:ro
-    healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
     networks:
       - creatoros-network
     restart: unless-stopped
@@ -180,17 +154,24 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - KEYCLOAK_ISSUER_URI=${KEYCLOAK_ISSUER_URI}
-      - KEYCLOAK_JWK_SET_URI=${KEYCLOAK_JWK_SET_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - ACCESS_TOKEN_EXPIRATION=${ACCESS_TOKEN_EXPIRATION:-900}
+      - REFRESH_TOKEN_EXPIRATION=${REFRESH_TOKEN_EXPIRATION:-604800}
+      - AUTH_DEBUG_TOKEN_RESPONSE=${AUTH_DEBUG_TOKEN_RESPONSE:-false}
+      - KAFKA_TOPIC_AUTH_USER_CREATED=${KAFKA_TOPIC_AUTH_USER_CREATED:-auth.user.created}
+      - KAFKA_TOPIC_AUTH_USER_ROLE_UPDATED=${KAFKA_TOPIC_AUTH_USER_ROLE_UPDATED:-auth.user.role-updated}
+      - KAFKA_TOPIC_AUTH_USER_DELETED=${KAFKA_TOPIC_AUTH_USER_DELETED:-auth.user.deleted}
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:5173}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      - NOTIFICATION_SERVICE_BASE_URL=${NOTIFICATION_SERVICE_BASE_URL:-http://notification-service:8090}
+      - NOTIFICATION_SERVICE_TOPIC=${NOTIFICATION_SERVICE_TOPIC:-notification.send.requested}
     ports:
       - "${AUTH_SERVICE_PORT}:8081"
     depends_on:
       postgres:
         condition: service_healthy
-      kafka:
-        condition: service_healthy
-      keycloak:
-        condition: service_healthy
+      notification-service:
+        condition: service_started
     restart: unless-stopped
     networks:
       - creatoros-network
@@ -208,8 +189,7 @@ services:
       - DB_NAME=profile_db
       - DB_USERNAME=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
-      - KEYCLOAK_ISSUER_URI=${KEYCLOAK_ISSUER_URI}
-      - KEYCLOAK_JWK_SET_URI=${KEYCLOAK_JWK_SET_URI}
+      - JWT_SECRET=${JWT_SECRET}
     ports:
       - "${PROFILE_SERVICE_PORT}:8082"
     depends_on:
@@ -276,10 +256,15 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - KAFKA_TOPIC_PUBLISH_REQUESTED=${KAFKA_TOPIC_PUBLISH_REQUESTED:-publish.requested}
+      - KAFKA_TOPIC_PUBLISH_STARTED=${KAFKA_TOPIC_PUBLISH_STARTED:-publish.started}
+      - KAFKA_TOPIC_PUBLISH_SUCCEEDED=${KAFKA_TOPIC_PUBLISH_SUCCEEDED:-publish.succeeded}
+      - KAFKA_TOPIC_PUBLISH_FAILED=${KAFKA_TOPIC_PUBLISH_FAILED:-publish.failed}
+      - KAFKA_TOPIC_PUBLISH_RETRY_REQUESTED=${KAFKA_TOPIC_PUBLISH_RETRY_REQUESTED:-publish.retry.requested}
       - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
       - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}
       - LINKEDIN_REDIRECT_URI=${LINKEDIN_REDIRECT_URI}
-      - YOUTUBE_CLIENT_ID=${YOUTUBE_CLIENT_ID} 
+      - YOUTUBE_CLIENT_ID=${YOUTUBE_CLIENT_ID}
       - YOUTUBE_CLIENT_SECRET=${YOUTUBE_CLIENT_SECRET}
       - YOUTUBE_REDIRECT_URI=${YOUTUBE_REDIRECT_URI}
       - YOUTUBE_STATE_SECRET=${YOUTUBE_STATE_SECRET}
@@ -296,6 +281,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
     restart: unless-stopped
     networks:
       - creatoros-network
@@ -313,6 +300,11 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - KAFKA_TOPIC_PUBLISH_STARTED=${KAFKA_TOPIC_PUBLISH_STARTED:-publish.started}
+      - KAFKA_TOPIC_PUBLISH_SUCCEEDED=${KAFKA_TOPIC_PUBLISH_SUCCEEDED:-publish.succeeded}
+      - KAFKA_TOPIC_PUBLISH_FAILED=${KAFKA_TOPIC_PUBLISH_FAILED:-publish.failed}
+      - KAFKA_TOPIC_PUBLISH_RETRY_REQUESTED=${KAFKA_TOPIC_PUBLISH_RETRY_REQUESTED:-publish.retry.requested}
+      - KAFKA_TOPIC_NOTIFICATION_SEND_REQUESTED=${KAFKA_TOPIC_NOTIFICATION_SEND_REQUESTED:-notification.send.requested}
       - MAILERSEND_TOKEN=${MAILERSEND_TOKEN}
       - MAILERSEND_FROM_EMAIL=${MAILERSEND_FROM_EMAIL}
       - MAILERSEND_FROM_NAME=${MAILERSEND_FROM_NAME}
@@ -320,8 +312,6 @@ services:
       - "${NOTIFICATION_SERVICE_PORT:-8090}:8090"
     depends_on:
       postgres:
-        condition: service_healthy
-      kafka:
         condition: service_healthy
     restart: unless-stopped
     networks:
@@ -339,6 +329,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - KAFKA_TOPIC_PUBLISH_REQUESTED=${KAFKA_TOPIC_PUBLISH_REQUESTED:-publish.requested}
     ports:
       - "8086:8086"
     depends_on:
@@ -346,6 +337,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
     restart: unless-stopped
     networks:
       - creatoros-network
@@ -363,6 +356,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - KAFKA_TOPIC_PUBLISH_SUCCEEDED=${KAFKA_TOPIC_PUBLISH_SUCCEEDED:-publish.succeeded}
+      - KAFKA_TOPIC_ANALYTICS_INGEST_REQUESTED=${KAFKA_TOPIC_ANALYTICS_INGEST_REQUESTED:-analytics.ingest.requested}
     ports:
       - "8087:8087"
     depends_on:
@@ -370,6 +365,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
     restart: unless-stopped
     networks:
       - creatoros-network
@@ -383,8 +380,6 @@ services:
     environment:
       - SERVER_PORT=8080
       - JWT_SECRET=${JWT_SECRET}
-      - KEYCLOAK_ISSUER_URI=${KEYCLOAK_ISSUER_URI}
-      - KEYCLOAK_JWK_SET_URI=${KEYCLOAK_JWK_SET_URI}
       - SERVICES_AUTH_SERVICE_URL=http://auth-service:8081
       - SERVICES_PROFILE_SERVICE_URL=http://profile-service:8082
       - SERVICES_CONTENT_SERVICE_URL=http://content-service:8083
@@ -414,7 +409,6 @@ volumes:
   zookeeper_data:
   zookeeper_logs:
   kafka_data:
-  keycloak_db_data:
 
 networks:
   creatoros-network:

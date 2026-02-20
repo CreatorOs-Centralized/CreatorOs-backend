@@ -108,16 +108,16 @@ docker-compose ps
 
 ## Services
 
-| Service | Port | Purpose | Database |
-|---------|------|---------|----------|
-| **API Gateway** | 8080 | Request routing and load balancing | - |
-| **Auth Service** | 8081 | Authentication & authorization | auth_db |
-| **Profile Service** | 8082 | User profile management | profile_db |
-| **Content Service** | 8083 | Content management | content_db |
-| **Asset Service** | 8084 | File uploads & GCS integration | asset_db |
-| **Publishing Service** | 8085 | Social media publishing | publishing_db |
-| **Scheduler Service** | 8086 | Task scheduling | scheduler_db |
-| **Analytics Service** | 8087 | Platform analytics & metrics | analytics_db |
+| Service                | Port | Purpose                            | Database      |
+| ---------------------- | ---- | ---------------------------------- | ------------- |
+| **API Gateway**        | 8080 | Request routing and load balancing | -             |
+| **Auth Service**       | 8081 | Authentication & authorization     | auth_db       |
+| **Profile Service**    | 8082 | User profile management            | profile_db    |
+| **Content Service**    | 8083 | Content management                 | content_db    |
+| **Asset Service**      | 8084 | File uploads & GCS integration     | asset_db      |
+| **Publishing Service** | 8085 | Social media publishing            | publishing_db |
+| **Scheduler Service**  | 8086 | Task scheduling                    | scheduler_db  |
+| **Analytics Service**  | 8087 | Platform analytics & metrics       | analytics_db  |
 
 ### Infrastructure Services
 
@@ -131,24 +131,28 @@ docker-compose ps
 ### For Developers
 
 1. **Initial Setup**
+
    ```bash
    make setup
    # or: .\docker.ps1 setup (Windows)
    ```
 
 2. **Edit Configuration**
+
    ```bash
    # Update .env with your values
    nano .env
    ```
 
 3. **Start Development**
+
    ```bash
    make up
    # or: .\docker.ps1 up (Windows)
    ```
 
 4. **View Logs**
+
    ```bash
    make logs-auth
    # or: .\docker.ps1 logs-auth (Windows)
@@ -215,11 +219,13 @@ make dev-<service> # Rebuild specific service
 All configuration is driven by `.env` file:
 
 **Database:**
+
 - `POSTGRES_USER` - PostgreSQL username
 - `POSTGRES_PASSWORD` - PostgreSQL password (required)
 - `POSTGRES_PORT` - PostgreSQL port (default: 5432)
 
 **Service Ports:**
+
 - `API_GATEWAY_PORT` - API Gateway port (default: 8080)
 - `AUTH_SERVICE_PORT` - Auth Service port (default: 8081)
 - `PROFILE_SERVICE_PORT` - Profile Service port (default: 8082)
@@ -230,6 +236,7 @@ All configuration is driven by `.env` file:
 - `ANALYTICS_SERVICE_PORT` - Analytics Service port (default: 8087)
 
 **External Services:**
+
 - `GCP_PROJECT_ID` - Google Cloud Project ID
 - `GCP_BUCKET_NAME` - GCS bucket name
 - `GCP_CREDENTIALS_PATH` - Path to GCP credentials JSON
@@ -247,6 +254,7 @@ cp docker-compose.override.yml.example docker-compose.override.yml
 ```
 
 This allows:
+
 - Adding debug ports
 - Mounting source code for hot reload
 - Adding monitoring tools (Kafka UI, Redis Commander, Adminer)
@@ -282,6 +290,7 @@ docker-compose exec postgres psql -U postgres
 ### Databases
 
 All services have separate databases:
+
 - `auth_db` - Auth Service
 - `profile_db` - Profile Service
 - `content_db` - Content Service
@@ -313,12 +322,14 @@ docker-compose exec kafka kafka-console-consumer \
 ## Troubleshooting
 
 ### Port Already in Use
+
 ```bash
 # Update .env with different port
 AUTH_SERVICE_PORT=8181  # Changed from 8081
 ```
 
 ### Service Won't Start
+
 ```bash
 # Check logs
 docker-compose logs -f <service-name>
@@ -331,6 +342,7 @@ docker stats
 ```
 
 ### Database Connection Failed
+
 ```bash
 # Wait 30 seconds or check:
 docker-compose ps postgres
@@ -340,6 +352,7 @@ docker-compose logs postgres
 ```
 
 ### GCP Credentials Error
+
 ```bash
 # Verify path exists
 ls -la path/to/credentials.json
@@ -349,6 +362,7 @@ GCP_CREDENTIALS_PATH=./credentials/gcp.json
 ```
 
 ### Memory Issues
+
 ```bash
 # Check available memory
 docker stats
@@ -458,6 +472,7 @@ docker-compose exec auth-service gradle test
 ## Performance Optimization
 
 ### Current Setup
+
 - Multi-stage Docker builds for smaller images
 - Alpine Linux for minimal size
 - JVM optimized for containers
@@ -467,6 +482,7 @@ docker-compose exec auth-service gradle test
 ### Scaling
 
 For production scaling:
+
 ```bash
 # Scale a service
 docker-compose up -d --scale publishing-service=3
@@ -506,6 +522,7 @@ docker-compose logs --since 5m auth-service
 ### Metrics
 
 Services expose metrics via Spring Boot Actuator:
+
 ```
 http://localhost:8081/actuator/prometheus  # Auth Service
 http://localhost:8082/actuator/prometheus  # Profile Service
@@ -514,6 +531,7 @@ http://localhost:8082/actuator/prometheus  # Profile Service
 ## Support
 
 For issues or questions:
+
 1. Check [DOCKER.md](DOCKER.md) troubleshooting section
 2. Check service logs: `docker-compose logs -f <service>`
 3. Review [docs/](docs/) for detailed documentation
@@ -558,6 +576,7 @@ CreatorOS-Backend/
 ## Getting Help
 
 Start here:
+
 1. **[QUICKSTART.md](QUICKSTART.md)** - Get running in 5 minutes
 2. **[DOCKER.md](DOCKER.md)** - Complete Docker documentation
 3. **[docs/](docs/)** - Architecture and API documentation
@@ -565,7 +584,7 @@ Start here:
 ## What's Next?
 
 - ☑ Docker setup completed
-- ◻ Add authentication with Keycloak
+- ◻ Add authentication with auth-service (JWT)
 - ◻ Configure CI/CD pipeline
 - ◻ Set up monitoring (Prometheus/Grafana)
 - ◻ Deploy to cloud (AWS/GCP/Azure)
