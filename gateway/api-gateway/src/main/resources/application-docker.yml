@@ -7,8 +7,8 @@ spring:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
       globalcors:
         corsConfigurations:
-          '[/**]':
-            allowedOrigins: 
+          "[/**]":
+            allowedOrigins:
               - "http://localhost:3000"
               - "http://localhost:5173"
               - "${FRONTEND_URL:http://localhost:3000}"
