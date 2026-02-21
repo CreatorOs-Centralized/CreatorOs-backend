@@ -1,11 +1,9 @@
-version: "3.9"
-
 services:
-
   # ========================================
   # Infrastructure Services
   # ========================================
 
+  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
     container_name: creatoros_postgres
@@ -13,6 +11,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_MULTIPLE_DATABASES: ${POSTGRES_DBS}
+    ports:
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infra/postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
@@ -23,46 +23,52 @@ services:
       retries: 5
     networks:
       - creatoros-network
-    restart: unless-stopped
 
+  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: creatoros_redis
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "${REDIS_PORT}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
     networks:
       - creatoros-network
-    restart: unless-stopped
-
+  
+  # Kafka Zookeeper
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: creatoros_zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "${ZOOKEEPER_PORT}:2181"
     volumes:
       - zookeeper_data:/var/lib/zookeeper/data
       - zookeeper_logs:/var/lib/zookeeper/log
     networks:
       - creatoros-network
-    restart: unless-stopped
 
+  # Kafka Broker
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: creatoros_kafka
     depends_on:
       - zookeeper
+    ports:
+      - "${KAFKA_PORT}:9092"
+      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:${KAFKA_PORT}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
@@ -71,27 +77,39 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:29092"]
+      test:
+        [
+          "CMD",
+          "kafka-broker-api-versions",
+          "--bootstrap-server",
+          "localhost:9092",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - creatoros-network
-    restart: unless-stopped
 
+  # Kafka UI - Web Interface for Monitoring Kafka
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: creatoros_kafka_ui
     depends_on:
       - kafka
+    ports:
+      - "8088:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: creatoros
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_JMXPORT: 9999
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: kafka-connect
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: localhost:8083
     networks:
       - creatoros-network
     restart: unless-stopped
 
+  # Keycloak Database
   keycloak-db:
     image: postgres:15-alpine
     container_name: creatoros_keycloak_db
@@ -99,6 +117,8 @@ services:
       POSTGRES_USER: ${KEYCLOAK_DB_USER}
       POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
       POSTGRES_DB: ${KEYCLOAK_DB_NAME}
+    ports:
+      - "5434:5432"
     volumes:
       - keycloak_db_data:/var/lib/postgresql/data
     healthcheck:
@@ -108,12 +128,11 @@ services:
       retries: 5
     networks:
       - creatoros-network
-    restart: unless-stopped
 
+  # Keycloak Identity Provider
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.6
     container_name: creatoros_keycloak
-    command: start --http-port=8080 --import-realm
     depends_on:
       keycloak-db:
         condition: service_healthy
@@ -127,25 +146,32 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
       KC_PROXY: edge
-      KC_HEALTH_ENABLED: "true"
+    command:
+      - start-dev
+      - --http-port=8080
+      - --import-realm
+    ports:
+      - "8089:8080"
+    volumes:
+      - ./services/auth-service/keycloak/import:/opt/keycloak/data/import:ro
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 12
-    volumes:
-      - ./services/auth-service/keycloak/import:/opt/keycloak/data/import:ro
     networks:
       - creatoros-network
     restart: unless-stopped
 
   # ========================================
-  # Application Services (INTERNAL ONLY)
+  # Application Services
   # ========================================
 
+  # Auth Service
   auth-service:
     build:
       context: ./services/auth-service
+      dockerfile: Dockerfile
     container_name: auth-service
     environment:
       - SPRING_PROFILES_ACTIVE=docker
@@ -156,6 +182,8 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - KEYCLOAK_ISSUER_URI=${KEYCLOAK_ISSUER_URI}
       - KEYCLOAK_JWK_SET_URI=${KEYCLOAK_JWK_SET_URI}
+    ports:
+      - "${AUTH_SERVICE_PORT}:8081"
     depends_on:
       postgres:
         condition: service_healthy
@@ -163,13 +191,15 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - creatoros-network
-    restart: unless-stopped
 
+  # # Profile Service
   profile-service:
     build:
       context: ./services/profile-service
+      dockerfile: Dockerfile
     container_name: profile-service
     environment:
       - SERVER_PORT=8082
@@ -180,16 +210,20 @@ services:
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - KEYCLOAK_ISSUER_URI=${KEYCLOAK_ISSUER_URI}
       - KEYCLOAK_JWK_SET_URI=${KEYCLOAK_JWK_SET_URI}
+    ports:
+      - "${PROFILE_SERVICE_PORT}:8082"
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - creatoros-network
-    restart: unless-stopped
 
+  # # Content Service
   content-service:
     build:
       context: ./services/content-service
+      dockerfile: Dockerfile
     container_name: content-service
     environment:
       - SERVER_PORT=8083
@@ -197,16 +231,20 @@ services:
       - DB_PORT=5432
       - DB_USERNAME=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "${CONTENT_SERVICE_PORT}:8083"
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - creatoros-network
-    restart: unless-stopped
 
+  # # Asset Service
   asset-service:
     build:
       context: ./services/asset-service
+      dockerfile: Dockerfile
     container_name: asset-service
     environment:
       - SERVER_PORT=8084
@@ -215,19 +253,23 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - GCP_PROJECT_ID=${GCP_PROJECT_ID}
       - GCP_BUCKET_NAME=${GCP_BUCKET_NAME}
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
+      - GOOGLE_APPLICATION_CREDENTIALS=/gcloud/application_default_credentials.json
+    ports:
+      - "8084:8084"
     volumes:
-      - ${GCP_CREDENTIALS_PATH}:/app/gcp-credentials.json:ro
+      - ${GCP_CREDENTIALS_PATH}:/gcloud/application_default_credentials.json:ro
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - creatoros-network
-    restart: unless-stopped
 
+  # Publishing Service
   publishing-service:
     build:
       context: ./services/publishing-service
+      dockerfile: Dockerfile
     container_name: publishing-service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/publishing_db
@@ -237,28 +279,32 @@ services:
       - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
       - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}
       - LINKEDIN_REDIRECT_URI=${LINKEDIN_REDIRECT_URI}
-      - YOUTUBE_CLIENT_ID=${YOUTUBE_CLIENT_ID}
+      - YOUTUBE_CLIENT_ID=${YOUTUBE_CLIENT_ID} 
       - YOUTUBE_CLIENT_SECRET=${YOUTUBE_CLIENT_SECRET}
       - YOUTUBE_REDIRECT_URI=${YOUTUBE_REDIRECT_URI}
       - YOUTUBE_STATE_SECRET=${YOUTUBE_STATE_SECRET}
       - YOUTUBE_STATE_TTL_SECONDS=${YOUTUBE_STATE_TTL_SECONDS}
       - GCP_PROJECT_ID=${GCP_PROJECT_ID}
       - GCP_BUCKET_NAME=${GCP_BUCKET_NAME}
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
+      - GOOGLE_APPLICATION_CREDENTIALS=/gcloud/application_default_credentials.json
     volumes:
-      - ${GCP_CREDENTIALS_PATH}:/app/gcp-credentials.json:ro
+      - ${GCP_CREDENTIALS_PATH}:/gcloud/application_default_credentials.json:ro
+    ports:
+      - "${PUBLISHING_SERVICE_PORT}:8085"
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - creatoros-network
-    restart: unless-stopped
 
+  # Notification Service
   notification-service:
     build:
       context: ./services/notification-service
+      dockerfile: Dockerfile
     container_name: notification-service
     environment:
       - SPRING_PROFILES_ACTIVE=docker
@@ -270,18 +316,22 @@ services:
       - MAILERSEND_TOKEN=${MAILERSEND_TOKEN}
       - MAILERSEND_FROM_EMAIL=${MAILERSEND_FROM_EMAIL}
       - MAILERSEND_FROM_NAME=${MAILERSEND_FROM_NAME}
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT:-8090}:8090"
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - creatoros-network
-    restart: unless-stopped
 
+  # Scheduler Service
   scheduler-service:
     build:
       context: ./services/scheduler-service
+      dockerfile: Dockerfile
     container_name: scheduler-service
     environment:
       - SERVER_PORT=8086
@@ -289,42 +339,47 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    ports:
+      - "8086:8086"
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - creatoros-network
-    restart: unless-stopped
 
+  # Analytics Service
   analytics-service:
     build:
       context: ./services/analytics-service
+      dockerfile: Dockerfile
     container_name: analytics-service
     environment:
       - SERVER_PORT=8087
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USERNAME=${POSTGRES_USER}
-      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - SERVER_PORT=8087
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/analytics_db
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    ports:
+      - "8087:8087"
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - creatoros-network
-    restart: unless-stopped
 
-  # ONLY PUBLIC ENTRY POINT
+  # API Gateway
   api-gateway:
     build:
       context: ./gateway/api-gateway
+      dockerfile: Dockerfile
     container_name: api-gateway
-    ports:
-      - "${API_GATEWAY_PORT}:8080"
     environment:
       - SERVER_PORT=8080
       - JWT_SECRET=${JWT_SECRET}
@@ -336,8 +391,11 @@ services:
       - SERVICES_ASSET_SERVICE_URL=http://asset-service:8084
       - SERVICES_PUBLISHING_SERVICE_URL=http://publishing-service:8085
       - SERVICES_NOTIFICATION_SERVICE_URL=http://notification-service:8090
+      - NOTIFICATION_SERVICE_URL=http://notification-service:8090
       - SERVICES_SCHEDULER_SERVICE_URL=http://scheduler-service:8086
       - SERVICES_ANALYTICS_SERVICE_URL=http://analytics-service:8087
+    ports:
+      - "${API_GATEWAY_PORT}:8080"
     depends_on:
       - auth-service
       - profile-service
@@ -346,9 +404,9 @@ services:
       - notification-service
       - scheduler-service
       - analytics-service
+    restart: unless-stopped
     networks:
       - creatoros-network
-    restart: unless-stopped
 
 volumes:
   postgres_data:
