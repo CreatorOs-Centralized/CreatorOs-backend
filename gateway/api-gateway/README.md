@@ -193,8 +193,9 @@ spring:
 server:
   port: 8080
 
-jwt:
-  secret: ${JWT_SECRET}
+security:
+  jwt:
+    secret: ${JWT_SECRET}
 ```
 
 ### application-docker.yml

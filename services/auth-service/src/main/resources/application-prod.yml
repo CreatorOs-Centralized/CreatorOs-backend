@@ -5,11 +5,12 @@
 # - SPRING_DATASOURCE_URL            (jdbc:postgresql://...)
 # - SPRING_DATASOURCE_USERNAME
 # - SPRING_DATASOURCE_PASSWORD
-# - KEYCLOAK_ISSUER_URI              (must match token `iss` exactly)
+# - JWT_SECRET
+# - ACCESS_TOKEN_EXPIRATION
+# - REFRESH_TOKEN_EXPIRATION
 # - KAFKA_BOOTSTRAP_SERVERS
 #
 # OPTIONAL environment variables:
-# - KEYCLOAK_JWK_SET_URI             (override only if issuer host is not reachable)
 # - SERVER_PORT
 # - APP_VERSION
 spring:
@@ -25,13 +26,6 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     consumer:
       group-id: auth-service
-
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI}
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:}
 
 management:
   info:

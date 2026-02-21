@@ -26,8 +26,7 @@ server:
 
 security:
   jwt:
-    issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8089/realms/creatoros}
-    jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://keycloak:8080/realms/creatoros/protocol/openid-connect/certs}
+    secret: ${JWT_SECRET:}
 
 logging:
   level:

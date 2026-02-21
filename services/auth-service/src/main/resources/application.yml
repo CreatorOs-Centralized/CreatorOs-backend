@@ -22,7 +22,7 @@ logging:
     level: "%5p [traceId=%X{traceId:-} spanId=%X{spanId:-} requestId=%X{requestId:-} userId=%X{userId:-}]"
 
 server:
-  port: ${SERVICE_PORT:8081}
+  port: ${SERVER_PORT:8081}
 
 management:
   endpoints:
@@ -52,3 +52,13 @@ creatoros:
       user-created: ${KAFKA_TOPIC_USER_CREATED:auth.user.created}
       user-role-updated: ${KAFKA_TOPIC_USER_ROLE_UPDATED:auth.user.role-updated}
       user-deleted: ${KAFKA_TOPIC_USER_DELETED:auth.user.deleted}
+
+  security:
+    jwt:
+      secret: ${JWT_SECRET:}
+      access-token-expiration: ${ACCESS_TOKEN_EXPIRATION:900}
+      refresh-token-expiration: ${REFRESH_TOKEN_EXPIRATION:604800}
+
+  auth:
+    debug-token-response: ${AUTH_DEBUG_TOKEN_RESPONSE:false}
+    skip-email-verification: ${AUTH_SKIP_EMAIL_VERIFICATION:false}

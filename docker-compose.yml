@@ -154,8 +154,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - KEYCLOAK_ISSUER_URI=${KEYCLOAK_ISSUER_URI}
-      - KEYCLOAK_JWK_SET_URI=${KEYCLOAK_JWK_SET_URI}
+    ports:
+      - "${AUTH_SERVICE_PORT}:8081"
     depends_on:
       postgres:
         condition: service_healthy
@@ -178,8 +178,8 @@ services:
       - DB_NAME=profile_db
       - DB_USERNAME=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
-      - KEYCLOAK_ISSUER_URI=${KEYCLOAK_ISSUER_URI}
-      - KEYCLOAK_JWK_SET_URI=${KEYCLOAK_JWK_SET_URI}
+    ports:
+      - "${PROFILE_SERVICE_PORT}:8082"
     depends_on:
       postgres:
         condition: service_healthy
@@ -328,8 +328,6 @@ services:
     environment:
       - SERVER_PORT=8080
       - JWT_SECRET=${JWT_SECRET}
-      - KEYCLOAK_ISSUER_URI=${KEYCLOAK_ISSUER_URI}
-      - KEYCLOAK_JWK_SET_URI=${KEYCLOAK_JWK_SET_URI}
       - SERVICES_AUTH_SERVICE_URL=http://auth-service:8081
       - SERVICES_PROFILE_SERVICE_URL=http://profile-service:8082
       - SERVICES_CONTENT_SERVICE_URL=http://content-service:8083

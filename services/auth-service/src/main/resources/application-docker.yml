@@ -4,32 +4,40 @@
 # docker-compose.yml should set:
 # - SPRING_PROFILES_ACTIVE=docker
 # - SPRING_DATASOURCE_PASSWORD
-# - KEYCLOAK_ISSUER_URI (must match token `iss`)
-# - KEYCLOAK_JWK_SET_URI (reachable from within Docker network)
+# - JWT_SECRET
+# - ACCESS_TOKEN_EXPIRATION
+# - REFRESH_TOKEN_EXPIRATION
 # - (optional) KAFKA_BOOTSTRAP_SERVERS
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://auth-db:5432/auth_db}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/auth_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD}
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:29092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     consumer:
       group-id: auth-service
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI}
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:}
-
 springdoc:
   api-docs:
     enabled: true
   swagger-ui:
     enabled: true
+
+creatoros:
+  auth:
+    debug-token-response: ${AUTH_DEBUG_TOKEN_RESPONSE:false}
+    frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+    mail-from: ${AUTH_MAIL_FROM:no-reply@creatoros.local}
+
+  notification-service:
+    base-url: ${NOTIFICATION_SERVICE_BASE_URL:http://notification-service:8090}
+    ingest-path: ${NOTIFICATION_SERVICE_INGEST_PATH:/api/v1/internal/notifications/ingest}
+    topic: ${NOTIFICATION_SERVICE_TOPIC:notification.send.requested}
+
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
