@@ -217,7 +217,7 @@ services:
       - GCP_BUCKET_NAME=${GCP_BUCKET_NAME}
       - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
     volumes:
-      - ${GCP_CREDENTIALS_PATH}:/gcloud/application_default_credentials.json:ro
+      - ${GCP_CREDENTIALS_PATH}:/app/gcp-credentials.json:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -242,11 +242,9 @@ services:
       - YOUTUBE_REDIRECT_URI=${YOUTUBE_REDIRECT_URI}
       - YOUTUBE_STATE_SECRET=${YOUTUBE_STATE_SECRET}
       - YOUTUBE_STATE_TTL_SECONDS=${YOUTUBE_STATE_TTL_SECONDS}
-      - YOUTUBE_STATE_SECRET=${YOUTUBE_STATE_SECRET}
-      - YOUTUBE_STATE_TTL_SECONDS=${YOUTUBE_STATE_TTL_SECONDS}
       - GCP_PROJECT_ID=${GCP_PROJECT_ID}
       - GCP_BUCKET_NAME=${GCP_BUCKET_NAME}
-      - GOOGLE_APPLICATION_CREDENTIALS=/gcloud/application_default_credentials.json
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
     volumes:
       - ${GCP_CREDENTIALS_PATH}:/app/gcp-credentials.json:ro
     depends_on:
@@ -306,10 +304,10 @@ services:
     container_name: analytics-service
     environment:
       - SERVER_PORT=8087
-      - SERVER_PORT=8087
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/analytics_db
-      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
-      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       postgres:
@@ -345,7 +343,6 @@ services:
       - profile-service
       - content-service
       - publishing-service
-      - notification-service
       - notification-service
       - scheduler-service
       - analytics-service
