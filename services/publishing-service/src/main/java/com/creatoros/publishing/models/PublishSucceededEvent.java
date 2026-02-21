@@ -18,6 +18,7 @@ public class PublishSucceededEvent {
     private UUID userId;
     private UUID publishJobId;
     private String platform;
+    private String email;
     private String platformPostId;
     private String permalink;
     private LocalDateTime publishedAt;

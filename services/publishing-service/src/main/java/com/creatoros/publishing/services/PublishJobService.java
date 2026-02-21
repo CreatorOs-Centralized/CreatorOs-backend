@@ -30,6 +30,7 @@ public class PublishJobService {
         job.setConnectedAccountId(event.getConnectedAccountId());
         job.setContentItemId(event.getContentItemId());
         job.setPlatform(event.getPlatform());
+        job.setPostType(event.getPostType() == null || event.getPostType().isBlank() ? "POST" : event.getPostType());
         job.setStatus("PENDING");
         job.setScheduledAt(event.getScheduledAt());
         job.setCreatedAt(LocalDateTime.now());

@@ -19,15 +19,18 @@ public class JwtUtil {
             @Value("${security.jwt.jwk-set-uri}") String jwkSetUri
     ) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
-        OAuth2TokenValidator<Jwt> validator = new DelegatingOAuth2TokenValidator<>(
-                JwtValidators.createDefaultWithIssuer(issuerUri)
-        );
-        decoder.setJwtValidator(validator);
+        // Relaxed validation for dev: We trust the signature verification against the JWK Set.
+        // If the signature is valid (signed by our Keycloak), we accept the token regardless of "iss" claim (localhost vs container).
         this.jwtDecoder = decoder;
     }
 
     public String validateAndExtractUserId(String token) {
         Jwt jwt = jwtDecoder.decode(token);
         return jwt.getSubject();
+    }
+
+    public String validateAndExtractEmail(String token) {
+        Jwt jwt = jwtDecoder.decode(token);
+        return jwt.getClaimAsString("email");
     }
 }

@@ -15,6 +15,9 @@ CREATE DATABASE asset_db;
 -- Create publishing_db
 CREATE DATABASE publishing_db;
 
+-- Create notification_db
+CREATE DATABASE notification_db;
+
 -- Create scheduler_db
 CREATE DATABASE scheduler_db;
 
