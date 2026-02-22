@@ -20,6 +20,7 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
+          passphrase: ${{ secrets.VM_SSH_PASSPHRASE }}
           source: "."
           target: "/home/${{ secrets.VM_USER }}/CreatorOs-Backend"
           rm: true
@@ -32,6 +33,7 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
+          passphrase: ${{ secrets.VM_SSH_PASSPHRASE }}
           script: |
             set -e
             cd /home/${{ secrets.VM_USER }}/CreatorOs-Backend
