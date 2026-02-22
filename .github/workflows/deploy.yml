@@ -14,20 +14,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Upload code to VM
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          passphrase: ${{ secrets.VM_SSH_PASSPHRASE }}
-          source: "."
-          target: "/home/${{ secrets.VM_USER }}/CreatorOs-Backend"
-          rm: true
-          overwrite: true
-          strip_components: 0
-
-      - name: Restart services with Docker Compose
+      - name: Pull latest code and restart Docker Compose
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VM_HOST }}
@@ -36,7 +23,8 @@ jobs:
           passphrase: ${{ secrets.VM_SSH_PASSPHRASE }}
           script: |
             set -e
-            cd /home/${{ secrets.VM_USER }}/CreatorOs-Backend
+            cd /home/${{ secrets.VM_USER }}/CreatorOs-backend
+            git pull origin main
 
             if command -v docker-compose >/dev/null 2>&1; then
               docker-compose down
