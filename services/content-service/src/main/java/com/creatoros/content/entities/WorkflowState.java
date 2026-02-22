@@ -1,5 +1,6 @@
 package com.creatoros.content.entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -34,6 +35,7 @@ public class WorkflowState {
     private String name;
 
     private int sortOrder;
+    @JsonProperty("isTerminal")
     private boolean isTerminal;
     private LocalDateTime createdAt;
 

@@ -1,5 +1,6 @@
 package com.creatoros.publishing.entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -57,6 +58,7 @@ public class ConnectedAccount {
 
     @Column(nullable = false)
     @lombok.Builder.Default
+    @JsonProperty("isActive")
     private Boolean isActive = true;
 
     private LocalDateTime connectedAt;

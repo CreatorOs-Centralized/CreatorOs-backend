@@ -1,5 +1,6 @@
 package com.creatoros.profile.dtos.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -37,5 +38,6 @@ public class CreateProfileRequest {
     @Size(max = 50, message = "Language must not exceed 50 characters")
     private String language;
 
+    @JsonProperty("isPublic")
     private boolean isPublic = true;
 }

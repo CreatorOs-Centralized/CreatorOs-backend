@@ -1,5 +1,6 @@
 package com.creatoros.assetservice.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,6 +36,7 @@ public class AssetFolder {
     private UUID parentFolderId;
 
     @Builder.Default
+    @JsonProperty("isDeleted")
     private Boolean isDeleted = false;
 
     @CreationTimestamp

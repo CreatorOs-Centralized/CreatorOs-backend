@@ -1,5 +1,6 @@
 package com.creatoros.content.entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -41,6 +42,7 @@ public class Campaign {
 
     @Builder.Default
     @Column(nullable = false)
+    @JsonProperty("isActive")
     private boolean isActive = true;
 
     private LocalDateTime createdAt;

@@ -1,5 +1,6 @@
 package com.creatoros.assetservice.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -55,6 +56,7 @@ public class MediaFile {
     private UploadStatus uploadStatus;
 
     @Builder.Default
+    @JsonProperty("isDeleted")
     private Boolean isDeleted = false;
 
     @CreationTimestamp

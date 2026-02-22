@@ -1,5 +1,6 @@
 package com.creatoros.profile.dtos.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -29,7 +30,9 @@ public class ProfileResponse {
     private String location;
     private String language;
 
+    @JsonProperty("isPublic")
     private boolean isPublic;
+    @JsonProperty("isVerified")
     private boolean isVerified;
     private String verificationLevel;
 
