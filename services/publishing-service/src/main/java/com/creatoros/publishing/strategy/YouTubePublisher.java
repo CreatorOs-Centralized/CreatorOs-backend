@@ -33,6 +33,7 @@ public class YouTubePublisher implements SocialPublisher {
 
         ConnectedAccount account = context.getConnectedAccount();
         java.util.UUID mediaId = context.getEvent().getContentItemId();
+        java.util.UUID userId = context.getEvent().getUserId();
 
         log.info("Publishing video to YouTube for account: {}, mediaId: {}", account.getId(), mediaId);
 
@@ -49,7 +50,7 @@ public class YouTubePublisher implements SocialPublisher {
 
             // Step 3: Get Video Metadata from Asset Service
             log.info("Fetching metadata for mediaId: {}", mediaId);
-            com.creatoros.publishing.models.MediaFileDTO mediaMetadata = assetServiceClient.getFileMetadata(mediaId);
+            com.creatoros.publishing.models.MediaFileDTO mediaMetadata = assetServiceClient.getFileMetadata(mediaId, userId);
 
             // Step 4: Build YouTube video metadata
             Video video = new Video();
@@ -67,7 +68,7 @@ public class YouTubePublisher implements SocialPublisher {
 
             // Step 5: Get video stream from Asset Service
             log.info("Downloading video stream for mediaId: {}", mediaId);
-            InputStream videoStream = assetServiceClient.downloadFile(mediaId);
+            InputStream videoStream = assetServiceClient.downloadFile(mediaId, userId);
 
             InputStreamContent mediaContent = new InputStreamContent(
                     mediaMetadata.getMimeType(),

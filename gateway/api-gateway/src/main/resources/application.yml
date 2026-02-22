@@ -12,6 +12,7 @@ spring:
               - "http://localhost:3000"
               - "http://localhost:5173"
               - "https://creatoros.adharbattulwar.com"
+              - "https://unanimated-myah-authoritatively.ngrok-free.dev"
             allowedMethods:
               - GET
               - POST
