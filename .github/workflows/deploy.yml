@@ -29,13 +29,8 @@ jobs:
           envs: GH_TOKEN,GITHUB_REPOSITORY
           script: |
             set -e
-            cd /home/${{ secrets.VM_USER }}/CreatorOs-Backend
-            git pull https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git main
-
-            if command -v docker-compose >/dev/null 2>&1; then
-              docker-compose down
-              docker-compose up -d --build
-            else
-              docker compose down
-              docker compose up -d --build
-            fi
+            cd /home/${{ secrets.VM_USER }}/CreatorOs-backend
+            git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+            git pull origin main
+            docker compose down
+            docker compose up -d --build
