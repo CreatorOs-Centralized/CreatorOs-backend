@@ -1,7 +1,7 @@
-package com.creatoros.profile.config;
+package com.creatoros.analytics.config;
 
-import com.creatoros.profile.security.JwtAuthenticationFilter;
-import com.creatoros.profile.security.JwtUtil;
+import com.creatoros.analytics.security.JwtAuthenticationFilter;
+import com.creatoros.analytics.security.JwtUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -11,13 +11,12 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Security Configuration for Profile Service
- * 
+ * Security Configuration for Analytics Service
  * Integrates with auth-service via JWT bearer tokens.
  */
 @Configuration
 @EnableMethodSecurity
-public class SecurityStubConfig {
+public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtUtil jwtUtil) throws Exception {
@@ -29,8 +28,7 @@ public class SecurityStubConfig {
                 .requestMatchers(
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
-                    "/actuator/**",
-                    "/actuator/health/**"
+                    "/actuator/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
@@ -41,5 +39,3 @@ public class SecurityStubConfig {
         return http.build();
     }
 }
-
-

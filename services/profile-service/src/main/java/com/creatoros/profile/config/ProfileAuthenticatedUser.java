@@ -4,7 +4,7 @@ import java.util.Set;
 
 /**
  * Authenticated user principal for profile service.
- * Extracted from Keycloak JWT bearer token.
+ * Extracted from auth-service JWT bearer token.
  */
 public class ProfileAuthenticatedUser {
     private final String userId;

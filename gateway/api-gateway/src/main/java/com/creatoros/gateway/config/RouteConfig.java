@@ -36,10 +36,9 @@ public class RouteConfig {
         return builder.routes()
 
                 // Auth Service - Public routes (no JWT required)
-                // StripPrefix removes /auth from path before forwarding
+                // Don't strip prefix for auth service since controller expects /auth path
                 .route("auth-service-public", r -> r
                         .path("/auth/**")
-                        .filters(f -> f.stripPrefix(1))
                         .uri(authServiceUrl))
 
                 // Profile Service

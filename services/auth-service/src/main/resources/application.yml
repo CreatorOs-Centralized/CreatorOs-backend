@@ -56,8 +56,8 @@ creatoros:
   security:
     jwt:
       secret: ${JWT_SECRET:}
-      access-token-expiration: ${ACCESS_TOKEN_EXPIRATION:900}
-      refresh-token-expiration: ${REFRESH_TOKEN_EXPIRATION:604800}
+      access-token-expiration: ${ACCESS_TOKEN_EXPIRATION:172800}
+      refresh-token-expiration: ${REFRESH_TOKEN_EXPIRATION:864000}
 
   auth:
     debug-token-response: ${AUTH_DEBUG_TOKEN_RESPONSE:false}

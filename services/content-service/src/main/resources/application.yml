@@ -15,6 +15,12 @@ spring:
   flyway:
     locations: classpath:db/migration
 
+# Auth-service JWT configuration
+creatoros:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:}
+
 management:
   endpoints:
     web:
