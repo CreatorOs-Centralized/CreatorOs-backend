@@ -9,6 +9,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -16,15 +18,19 @@ jobs:
 
       - name: Pull latest code and restart Docker Compose
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           passphrase: ${{ secrets.VM_SSH_PASSPHRASE }}
+          envs: GH_TOKEN,GITHUB_REPOSITORY
           script: |
             set -e
-            cd /home/${{ secrets.VM_USER }}/CreatorOs-backend
-            git pull origin main
+            cd /home/${{ secrets.VM_USER }}/CreatorOs-Backend
+            git pull https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git main
 
             if command -v docker-compose >/dev/null 2>&1; then
               docker-compose down
