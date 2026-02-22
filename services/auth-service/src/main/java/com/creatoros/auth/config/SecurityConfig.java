@@ -36,7 +36,8 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtUtil jwtUtil) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
-            .cors(Customizer.withDefaults())
+            // CORS is handled by API Gateway - disable here to prevent duplicate headers
+            .cors(cors -> cors.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex
                 // Without an explicit entry point, Spring Security defaults to 403 for unauthenticated requests

@@ -11,7 +11,7 @@ spring:
             allowedOrigins:
               - "http://localhost:3000"
               - "http://localhost:5173"
-              - "${FRONTEND_URL:http://localhost:3000}"
+              - "https://creatoros.adharbattulwar.com"
             allowedMethods:
               - GET
               - POST
@@ -21,6 +21,9 @@ spring:
               - PATCH
             allowedHeaders: "*"
             allowCredentials: true
+            exposedHeaders:
+              - "X-Correlation-Id"
+              - "Authorization"
 
 server:
   port: 8080
