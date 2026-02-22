@@ -3,6 +3,7 @@ package com.creatoros.auth.model;
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -34,17 +35,20 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class User {
 
     @Id
-    @Column(name = "id", nullable = false, length = 64)
-    private String id;
+    @Column(name = "id", nullable = false)
+    private UUID id;
 
-    @Column(name = "username", length = 150)
-    private String username;
-
-    @Column(name = "email", length = 320)
+    @Column(name = "email", nullable = false, unique = true, length = 320)
     private String email;
 
-    @Column(name = "enabled", nullable = false)
-    private boolean enabled = true;
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
+
+    @Column(name = "is_email_verified", nullable = false)
+    private boolean emailVerified = false;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -65,20 +69,12 @@ public class User {
     protected User() {
     }
 
-    public User(String id) {
+    public User(UUID id) {
         this.id = id;
     }
 
-    public String getId() {
+    public UUID getId() {
         return id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
     }
 
     public String getEmail() {
@@ -89,12 +85,28 @@ public class User {
         this.email = email;
     }
 
-    public boolean isEnabled() {
-        return enabled;
+    public String getPasswordHash() {
+        return passwordHash;
     }
 
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public Instant getCreatedAt() {

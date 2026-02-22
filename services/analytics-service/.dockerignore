@@ -1,0 +1,13 @@
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!build/libs/*.jar
+out/
+bin/
+.vscode/
+.idea/
+*.DS_Store
+*.class
+*.log
+*.lock

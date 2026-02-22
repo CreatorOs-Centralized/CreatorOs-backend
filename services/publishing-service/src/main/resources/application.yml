@@ -1,0 +1,74 @@
+spring:
+  application:
+    name: publishing-service
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+      enabled: true
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/publishing_db
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 20
+          fetch_size: 50
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+      group-id: publishing-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.creatoros.publishing.models
+        spring.json.value.default.type: com.creatoros.publishing.models.PublishRequestEvent
+        spring.json.use.type.headers: false
+
+server:
+  port: ${SERVER_PORT:8085}
+
+linkedin:
+  client-id: ${LINKEDIN_CLIENT_ID}
+  client-secret: ${LINKEDIN_CLIENT_SECRET}
+  redirect-uri: ${LINKEDIN_REDIRECT_URI}
+  auth-url: https://www.linkedin.com/oauth/v2/authorization
+  token-url: https://www.linkedin.com/oauth/v2/accessToken
+  api-base-url: https://api.linkedin.com/v2
+
+youtube:
+  client-id: ${YOUTUBE_CLIENT_ID}
+  client-secret: ${YOUTUBE_CLIENT_SECRET}
+  redirect-uri: ${YOUTUBE_REDIRECT_URI}
+  auth-url: https://accounts.google.com/o/oauth2/v2/auth
+  token-url: https://oauth2.googleapis.com/token
+  api-base-url: https://www.googleapis.com/youtube/v3
+  state-secret: ${YOUTUBE_STATE_SECRET}
+  state-ttl-seconds: ${YOUTUBE_STATE_TTL_SECONDS:600}
+
+gcp:
+  project-id: ${GCP_PROJECT_ID}
+  bucket-name: ${GCP_BUCKET_NAME}
+  credentials-path: ${GCP_CREDENTIALS_PATH}
+
+# Auth-service JWT configuration
+creatoros:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:}
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+    com.creatoros: DEBUG

@@ -1,0 +1,45 @@
+name: Deploy to VM
+
+on:
+	push:
+		branches:
+			- main
+	workflow_dispatch:
+
+jobs:
+	deploy:
+		runs-on: ubuntu-latest
+
+		steps:
+			- name: Checkout repository
+				uses: actions/checkout@v4
+
+			- name: Upload code to VM
+				uses: appleboy/scp-action@v0.1.7
+				with:
+					host: ${{ secrets.VM_HOST }}
+					username: ${{ secrets.VM_USER }}
+					key: ${{ secrets.VM_SSH_KEY }}
+					source: "."
+					target: "/home/${{ secrets.VM_USER }}/CreatorOs-Backend"
+					rm: true
+					overwrite: true
+					strip_components: 0
+
+			- name: Restart services with Docker Compose
+				uses: appleboy/ssh-action@v1.2.0
+				with:
+					host: ${{ secrets.VM_HOST }}
+					username: ${{ secrets.VM_USER }}
+					key: ${{ secrets.VM_SSH_KEY }}
+					script: |
+						set -e
+						cd /home/${{ secrets.VM_USER }}/CreatorOs-Backend
+
+						if command -v docker-compose >/dev/null 2>&1; then
+							docker-compose down
+							docker-compose up -d --build
+						else
+							docker compose down
+							docker compose up -d --build
+						fi

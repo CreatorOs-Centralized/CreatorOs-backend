@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      globalcors:
+        corsConfigurations:
+          "[/**]":
+            allowedOrigins:
+              - "http://localhost:3000"
+              - "http://localhost:5173"
+              - "${FRONTEND_URL:http://localhost:3000}"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders: "*"
+            allowCredentials: true
+
+server:
+  port: 8080
+
+# Docker environment - use service names
+services:
+  auth-service:
+    url: ${AUTH_SERVICE_URL:http://auth-service:8081}
+  profile-service:
+    url: ${PROFILE_SERVICE_URL:http://profile-service:8082}
+  content-service:
+    url: ${CONTENT_SERVICE_URL:http://content-service:8083}
+  asset-service:
+    url: ${ASSET_SERVICE_URL:http://asset-service:8084}
+  publishing-service:
+    url: ${PUBLISHING_SERVICE_URL:http://publishing-service:8085}
+  scheduler-service:
+    url: ${SCHEDULER_SERVICE_URL:http://scheduler-service:8086}
+  analytics-service:
+    url: ${ANALYTICS_SERVICE_URL:http://analytics-service:8087}
+  notification-service:
+    url: ${NOTIFICATION_SERVICE_URL:http://notification-service:8090}
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:}
+
+logging:
+  level:
+    root: INFO
+    com.creatoros: DEBUG
+    org.springframework.cloud.gateway: DEBUG
