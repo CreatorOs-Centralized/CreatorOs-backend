@@ -1,27 +1,26 @@
 package com.creatoros.profile.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.creatoros.profile.security.JwtAuthenticationFilter;
+import com.creatoros.profile.security.JwtUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
  * Security Configuration for Profile Service
  * 
- * Integrates with Keycloak via JWT bearer tokens.
+ * Integrates with auth-service via JWT bearer tokens.
  */
 @Configuration
 @EnableMethodSecurity
 public class SecurityStubConfig {
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-    private String issuerUri;
-
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtUtil jwtUtil) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -35,13 +34,12 @@ public class SecurityStubConfig {
                 ).permitAll()
                 .anyRequest().authenticated()
             )
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(new JwtAuthConverter()))
-            )
+            .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
             .httpBasic(basic -> basic.disable())
             .formLogin(form -> form.disable());
 
         return http.build();
     }
 }
+
 

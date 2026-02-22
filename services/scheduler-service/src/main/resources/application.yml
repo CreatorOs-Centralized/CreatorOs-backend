@@ -20,7 +20,13 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 server:
-  port: ${SERVER_PORT:8084}
+  port: ${SERVER_PORT:8086}
+
+# Auth-service JWT configuration
+creatoros:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:}
 
 logging:
   level:

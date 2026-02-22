@@ -62,6 +62,12 @@ gcp:
   bucket-name: ${GCP_BUCKET_NAME}
   credentials-path: ${GCP_CREDENTIALS_PATH}
 
+# Auth-service JWT configuration
+creatoros:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:}
+
 logging:
   level:
     root: ${LOG_LEVEL:INFO}

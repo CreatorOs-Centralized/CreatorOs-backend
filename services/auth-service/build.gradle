@@ -4,6 +4,8 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
+import java.util.Locale
+
 group = 'com.creatoros'
 version = '0.0.1-SNAPSHOT'
 
@@ -17,13 +19,25 @@ repositories {
 	mavenCentral()
 }
 
+dependencyManagement {
+	imports {
+		// Spring Boot 3.3.x manages an older Testcontainers; override to avoid Docker API negotiation issues on Docker Desktop.
+		mavenBom "org.testcontainers:testcontainers-bom:1.20.4"
+	}
+}
+
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+
+	// JWT (stateless auth)
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
 	// OpenAPI/Swagger UI (disabled in prod by default via profile config)
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
@@ -37,6 +51,8 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'org.springframework.kafka:spring-kafka-test'
+	testImplementation 'org.testcontainers:junit-jupiter'
+	testImplementation 'org.testcontainers:postgresql'
 	testImplementation 'com.h2database:h2'
 
 	testRuntimeOnly 'com.h2database:h2'
@@ -44,6 +60,29 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+
+	// Windows + Docker Desktop: Testcontainers can mis-detect the control pipe (docker_cli).
+	// Force the Docker Engine pipe so @Testcontainers(disabledWithoutDocker=true) doesn't skip.
+	def os = System.getProperty('os.name', '').toLowerCase(Locale.ROOT)
+	if (os.contains('win')) {
+		// Use the main Docker engine pipe. (docker_cli is a control plane pipe and breaks docker-java/Testcontainers.)
+		def engine = 'npipe:////./pipe/docker_engine'
+		systemProperty 'docker.host', engine
+		// Testcontainers shades docker-java; it reads the API version from the 'api.version' system property.
+		// Without this, it may default to an old API version (e.g. 1.32) that Docker Desktop rejects.
+		systemProperty 'api.version', '1.52'
+		// The forked test JVM inherits the Gradle daemon environment by default.
+		// If the user has DOCKER_HOST/DOCKER_API_VERSION pinned globally (e.g. docker_cli or 1.32), docker-java/Testcontainers will fail.
+		environment.remove('DOCKER_HOST')
+		environment.remove('DOCKER_API_VERSION')
+		environment.remove('DOCKER_TLS_VERIFY')
+		environment.remove('DOCKER_CERT_PATH')
+		// docker-java prefers the DOCKER_HOST environment variable.
+		environment 'DOCKER_HOST', engine
+		// Pin to a modern, supported API version for other Docker clients/tools.
+		environment 'DOCKER_API_VERSION', '1.52'
+		systemProperty 'docker.client.strategy', 'org.testcontainers.dockerclient.NpipeSocketClientProviderStrategy'
+	}
 }
 
 springBoot {
