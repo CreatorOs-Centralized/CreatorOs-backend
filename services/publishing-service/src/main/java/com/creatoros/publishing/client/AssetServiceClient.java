@@ -4,7 +4,6 @@ import com.creatoros.publishing.models.MediaFileDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -20,7 +19,11 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @Component
@@ -50,12 +53,21 @@ public class AssetServiceClient {
         String url = String.format("%s/view/%s", assetServiceUrl, fileId);
         log.debug("Downloading file stream from: {}", url);
 
-        // Execute request and return the input stream directly from response
-        return restTemplate.execute(url, org.springframework.http.HttpMethod.GET, request -> {
-            request.getHeaders().setBearerAuth(buildServiceToken(userId));
-        }, clientHttpResponse -> {
-            return clientHttpResponse.getBody();
-        });
+        try {
+            Path tempFile = Files.createTempFile("creatoros-asset-", "-" + fileId);
+            tempFile.toFile().deleteOnExit();
+
+            restTemplate.execute(url, org.springframework.http.HttpMethod.GET, request -> {
+                request.getHeaders().setBearerAuth(buildServiceToken(userId));
+            }, clientHttpResponse -> {
+                Files.copy(clientHttpResponse.getBody(), tempFile, StandardCopyOption.REPLACE_EXISTING);
+                return null;
+            });
+
+            return new FileInputStream(tempFile.toFile());
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to download asset stream: " + ex.getMessage(), ex);
+        }
     }
 
     private String buildServiceToken(UUID userId) {

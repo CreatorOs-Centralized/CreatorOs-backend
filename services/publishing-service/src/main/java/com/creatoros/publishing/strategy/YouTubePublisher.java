@@ -68,52 +68,53 @@ public class YouTubePublisher implements SocialPublisher {
 
             // Step 5: Get video stream from Asset Service
             log.info("Downloading video stream for mediaId: {}", mediaId);
-            InputStream videoStream = assetServiceClient.downloadFile(mediaId, userId);
+            try (InputStream videoStream = assetServiceClient.downloadFile(mediaId, userId)) {
+                InputStreamContent mediaContent = new InputStreamContent(
+                        mediaMetadata.getMimeType(),
+                        videoStream);
+                mediaContent.setLength(mediaMetadata.getSizeBytes());
 
-            InputStreamContent mediaContent = new InputStreamContent(
-                    mediaMetadata.getMimeType(),
-                    videoStream);
+                // Step 6: Upload video to YouTube
+                log.info("Starting YouTube video upload...");
 
-            // Step 6: Upload video to YouTube
-            log.info("Starting YouTube video upload...");
+                YouTube.Videos.Insert videoInsert = youtube.videos().insert(
+                        Arrays.asList("snippet", "status"),
+                        video,
+                        mediaContent);
 
-            YouTube.Videos.Insert videoInsert = youtube.videos().insert(
-                    Arrays.asList("snippet", "status"),
-                    video,
-                    mediaContent);
+                // Enable resumable upload
+                videoInsert.getMediaHttpUploader()
+                        .setDirectUploadEnabled(false)
+                        .setProgressListener(uploader -> {
+                            switch (uploader.getUploadState()) {
+                                case INITIATION_STARTED:
+                                    log.info("Upload initiation started");
+                                    break;
+                                case INITIATION_COMPLETE:
+                                    log.info("Upload initiation completed");
+                                    break;
+                                case MEDIA_IN_PROGRESS:
+                                    log.info("Upload progress: {}%", (int) (uploader.getProgress() * 100));
+                                    break;
+                                case MEDIA_COMPLETE:
+                                    log.info("Upload completed");
+                                    break;
+                            }
+                        });
 
-            // Enable resumable upload
-            videoInsert.getMediaHttpUploader()
-                    .setDirectUploadEnabled(false)
-                    .setProgressListener(uploader -> {
-                        switch (uploader.getUploadState()) {
-                            case INITIATION_STARTED:
-                                log.info("Upload initiation started");
-                                break;
-                            case INITIATION_COMPLETE:
-                                log.info("Upload initiation completed");
-                                break;
-                            case MEDIA_IN_PROGRESS:
-                                log.info("Upload progress: {}%", (int) (uploader.getProgress() * 100));
-                                break;
-                            case MEDIA_COMPLETE:
-                                log.info("Upload completed");
-                                break;
-                        }
-                    });
+                Video uploadedVideo = videoInsert.execute();
 
-            Video uploadedVideo = videoInsert.execute();
+                String videoId = uploadedVideo.getId();
+                String permalink = "https://www.youtube.com/watch?v=" + videoId;
 
-            String videoId = uploadedVideo.getId();
-            String permalink = "https://www.youtube.com/watch?v=" + videoId;
+                log.info("Successfully published video to YouTube. Video ID: {}", videoId);
 
-            log.info("Successfully published video to YouTube. Video ID: {}", videoId);
-
-            return PublishResult.builder()
-                    .success(true)
-                    .platformPostId(videoId)
-                    .permalink(permalink)
-                    .build();
+                return PublishResult.builder()
+                        .success(true)
+                        .platformPostId(videoId)
+                        .permalink(permalink)
+                        .build();
+            }
 
         } catch (Exception ex) {
             log.error("Failed to publish video to YouTube", ex);
