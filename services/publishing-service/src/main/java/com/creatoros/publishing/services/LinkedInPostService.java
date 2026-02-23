@@ -29,9 +29,9 @@ public class LinkedInPostService {
     /**
      * Get user's LinkedIn posts
      */
-    public Map<String, Object> getUserPosts(UUID accountId) {
+    public Map<String, Object> getUserPosts(UUID userId, UUID accountId) {
         try {
-            Optional<ConnectedAccount> account = accountRepository.findById(accountId);
+            Optional<ConnectedAccount> account = accountRepository.findByIdAndUserId(accountId, userId);
             
             if (account.isEmpty()) {
                 throw new RuntimeException("Connected account not found for ID: " + accountId);
@@ -85,9 +85,9 @@ public class LinkedInPostService {
     /**
      * Publish a post to LinkedIn
      */
-    public Map<String, Object> publishPost(UUID accountId, String postText) {
+    public Map<String, Object> publishPost(UUID userId, UUID accountId, String postText) {
         try {
-            Optional<ConnectedAccount> account = accountRepository.findById(accountId);
+            Optional<ConnectedAccount> account = accountRepository.findByIdAndUserId(accountId, userId);
             
             if (account.isEmpty()) {
                 throw new RuntimeException("Connected account not found for ID: " + accountId);

@@ -32,12 +32,13 @@ public class YouTubeAnalyticsService {
      * Get video analytics for a specific date range using REST API
      */
     public Map<String, Object> getVideoAnalytics(
+            UUID userId,
             UUID accountId, 
             String videoId,
             LocalDate startDate,
             LocalDate endDate
     ) {
-        ConnectedAccount account = accountRepository.findById(accountId)
+        ConnectedAccount account = accountRepository.findByIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new RuntimeException("Account not found: " + accountId));
 
         try {
@@ -78,11 +79,12 @@ public class YouTubeAnalyticsService {
      * Get channel analytics for a date range using REST API
      */
     public Map<String, Object> getChannelAnalytics(
+            UUID userId,
             UUID accountId,
             LocalDate startDate,
             LocalDate endDate
     ) {
-        ConnectedAccount account = accountRepository.findById(accountId)
+        ConnectedAccount account = accountRepository.findByIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new RuntimeException("Account not found: " + accountId));
 
         try {
@@ -122,12 +124,13 @@ public class YouTubeAnalyticsService {
      * Get top performing videos for a date range using REST API
      */
     public List<Map<String, Object>> getTopVideos(
+            UUID userId,
             UUID accountId,
             LocalDate startDate,
             LocalDate endDate,
             Integer maxResults
     ) {
-        ConnectedAccount account = accountRepository.findById(accountId)
+        ConnectedAccount account = accountRepository.findByIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new RuntimeException("Account not found: " + accountId));
 
         try {

@@ -1,25 +1,15 @@
-package com.creatoros.content.utils;
+package com.creatoros.publishing.utils;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.UUID;
 
-/**
- * User Context Utility
- * 
- * Extracts authenticated user ID from JWT security context.
- */
 public final class UserContextUtil {
 
     private UserContextUtil() {
     }
 
-    /**
-     * Get the current authenticated user's ID from security context
-     * 
-     * @return User ID from JWT principal
-     */
     public static UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getPrincipal() == null) {

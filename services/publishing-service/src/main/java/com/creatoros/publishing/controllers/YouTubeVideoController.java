@@ -8,6 +8,7 @@ import com.creatoros.publishing.repositories.ConnectedAccountRepository;
 import com.creatoros.publishing.services.PublishExecutionService;
 import com.creatoros.publishing.services.YouTubeAnalyticsService;
 import com.creatoros.publishing.services.YouTubeVideoService;
+import com.creatoros.publishing.utils.UserContextUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -46,16 +47,16 @@ public class YouTubeVideoController {
          */
         @GetMapping("/accounts/{accountId}/videos")
         public ResponseEntity<?> getChannelVideos(
-                        @RequestHeader("X-User-Id") String userId,
                         @PathVariable UUID accountId,
                         @RequestParam(required = false, defaultValue = "10") Integer maxResults) {
                 try {
+                        UUID userId = UserContextUtil.getCurrentUserId();
                         if (maxResults > 50) {
                                 maxResults = 50; // YouTube API limit
                         }
 
                         log.info("Fetching videos for account: {}, maxResults: {}", accountId, maxResults);
-                        List<Map<String, Object>> videos = youtubeVideoService.getChannelVideos(accountId, maxResults);
+                        List<Map<String, Object>> videos = youtubeVideoService.getChannelVideos(userId, accountId, maxResults);
 
                         return ResponseEntity.ok(Map.of(
                                         "success", true,
@@ -85,12 +86,12 @@ public class YouTubeVideoController {
          */
         @GetMapping("/accounts/{accountId}/videos/{videoId}")
         public ResponseEntity<?> getVideoById(
-                        @RequestHeader("X-User-Id") String userId,
                         @PathVariable UUID accountId,
                         @PathVariable String videoId) {
                 try {
+                        UUID userId = UserContextUtil.getCurrentUserId();
                         log.info("Fetching video {} for account: {}", videoId, accountId);
-                        Map<String, Object> video = youtubeVideoService.getVideoById(accountId, videoId);
+                        Map<String, Object> video = youtubeVideoService.getVideoById(userId, accountId, videoId);
 
                         return ResponseEntity.ok(Map.of(
                                         "success", true,
@@ -118,11 +119,11 @@ public class YouTubeVideoController {
          */
         @GetMapping("/accounts/{accountId}/statistics")
         public ResponseEntity<?> getChannelStatistics(
-                        @RequestHeader("X-User-Id") String userId,
                         @PathVariable UUID accountId) {
                 try {
+                        UUID userId = UserContextUtil.getCurrentUserId();
                         log.info("Fetching channel statistics for account: {}", accountId);
-                        Map<String, Object> stats = youtubeVideoService.getChannelStatistics(accountId);
+                        Map<String, Object> stats = youtubeVideoService.getChannelStatistics(userId, accountId);
 
                         return ResponseEntity.ok(Map.of(
                                         "success", true,
@@ -153,18 +154,18 @@ public class YouTubeVideoController {
          */
         @GetMapping("/accounts/{accountId}/videos/{videoId}/analytics")
         public ResponseEntity<?> getVideoAnalytics(
-                        @RequestHeader("X-User-Id") String userId,
                         @PathVariable UUID accountId,
                         @PathVariable String videoId,
                         @RequestParam(required = false) String startDate,
                         @RequestParam(required = false) String endDate) {
                 try {
+                        UUID userId = UserContextUtil.getCurrentUserId();
                         LocalDate start = startDate != null ? LocalDate.parse(startDate)
                                         : LocalDate.now().minusDays(30);
                         LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
 
                         log.info("Fetching analytics for video {} from {} to {}", videoId, start, end);
-                        Map<String, Object> analytics = youtubeAnalyticsService.getVideoAnalytics(accountId, videoId,
+                        Map<String, Object> analytics = youtubeAnalyticsService.getVideoAnalytics(userId, accountId, videoId,
                                         start, end);
 
                         return ResponseEntity.ok(Map.of(
@@ -195,17 +196,17 @@ public class YouTubeVideoController {
          */
         @GetMapping("/accounts/{accountId}/analytics")
         public ResponseEntity<?> getChannelAnalytics(
-                        @RequestHeader("X-User-Id") String userId,
                         @PathVariable UUID accountId,
                         @RequestParam(required = false) String startDate,
                         @RequestParam(required = false) String endDate) {
                 try {
+                        UUID userId = UserContextUtil.getCurrentUserId();
                         LocalDate start = startDate != null ? LocalDate.parse(startDate)
                                         : LocalDate.now().minusDays(30);
                         LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
 
                         log.info("Fetching channel analytics from {} to {}", start, end);
-                        Map<String, Object> analytics = youtubeAnalyticsService.getChannelAnalytics(accountId, start,
+                        Map<String, Object> analytics = youtubeAnalyticsService.getChannelAnalytics(userId, accountId, start,
                                         end);
 
                         return ResponseEntity.ok(Map.of(
@@ -237,18 +238,18 @@ public class YouTubeVideoController {
          */
         @GetMapping("/accounts/{accountId}/top-videos")
         public ResponseEntity<?> getTopVideos(
-                        @RequestHeader("X-User-Id") String userId,
                         @PathVariable UUID accountId,
                         @RequestParam(required = false) String startDate,
                         @RequestParam(required = false) String endDate,
                         @RequestParam(required = false, defaultValue = "10") Integer maxResults) {
                 try {
+                        UUID userId = UserContextUtil.getCurrentUserId();
                         LocalDate start = startDate != null ? LocalDate.parse(startDate)
                                         : LocalDate.now().minusDays(30);
                         LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
 
                         log.info("Fetching top videos from {} to {}", start, end);
-                        List<Map<String, Object>> topVideos = youtubeAnalyticsService.getTopVideos(accountId, start,
+                        List<Map<String, Object>> topVideos = youtubeAnalyticsService.getTopVideos(userId, accountId, start,
                                         end, maxResults);
 
                         return ResponseEntity.ok(Map.of(
@@ -287,10 +288,10 @@ public class YouTubeVideoController {
         @PostMapping("/publish")
 
         public ResponseEntity<?> publishVideo(
-                        @RequestHeader("X-User-Id") String userId,
                         @RequestHeader(value = "X-User-Email", required = false) String userEmail,
                         @RequestBody PublishVideoRequest request) {
                 try {
+                        UUID userId = UserContextUtil.getCurrentUserId();
                         // Validate request
                         if (request.getAccountId() == null) {
                                 return ResponseEntity.badRequest().body(Map.of(
@@ -310,7 +311,7 @@ public class YouTubeVideoController {
                         }
 
                         // Get connected account
-                        ConnectedAccount account = accountRepository.findById(request.getAccountId())
+                        ConnectedAccount account = accountRepository.findByIdAndUserId(request.getAccountId(), userId)
                                         .orElseThrow(() -> new RuntimeException(
                                                         "Account not found: " + request.getAccountId()));
 
@@ -325,7 +326,7 @@ public class YouTubeVideoController {
 
                         PublishRequestEvent event = new PublishRequestEvent();
                         event.setEventId(UUID.randomUUID());
-                        event.setUserId(UUID.fromString(userId));
+                        event.setUserId(userId);
                         event.setConnectedAccountId(request.getAccountId());
                         event.setPlatform("YOUTUBE");
                         event.setPostType("VIDEO");

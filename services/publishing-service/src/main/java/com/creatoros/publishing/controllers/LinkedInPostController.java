@@ -1,6 +1,7 @@
 package com.creatoros.publishing.controllers;
 
 import com.creatoros.publishing.services.LinkedInPostService;
+import com.creatoros.publishing.utils.UserContextUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -9,7 +10,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,11 +29,11 @@ public class LinkedInPostController {
      */
     @GetMapping("/{accountId}")
     public ResponseEntity<?> getUserPosts(
-            @RequestHeader("X-User-Id") String userId,
             @PathVariable UUID accountId) {
         try {
+            UUID userId = UserContextUtil.getCurrentUserId();
             log.info("Fetching posts for account: {}", accountId);
-            Map<String, Object> posts = linkedinPostService.getUserPosts(accountId);
+            Map<String, Object> posts = linkedinPostService.getUserPosts(userId, accountId);
             return ResponseEntity.ok(posts);
         } catch (RuntimeException ex) {
             log.error("Error fetching posts: {}", ex.getMessage());
@@ -51,11 +51,11 @@ public class LinkedInPostController {
      */
     @PostMapping("/{accountId}")
     public ResponseEntity<?> publishPost(
-            @RequestHeader("X-User-Id") String userId,
             @PathVariable UUID accountId,
             @RequestBody Map<String, String> request
     ) {
         try {
+            UUID userId = UserContextUtil.getCurrentUserId();
             String postText = request.get("text");
             if (postText == null || postText.trim().isEmpty()) {
                 return ResponseEntity.badRequest()
@@ -63,7 +63,7 @@ public class LinkedInPostController {
             }
 
             log.info("Publishing post for account: {}", accountId);
-            Map<String, Object> result = linkedinPostService.publishPost(accountId, postText);
+            Map<String, Object> result = linkedinPostService.publishPost(userId, accountId, postText);
             return ResponseEntity.ok(result);
         } catch (RuntimeException ex) {
             log.error("Error publishing post: {}", ex.getMessage());

@@ -2,11 +2,11 @@ package com.creatoros.publishing.controllers;
 
 import com.creatoros.publishing.entities.PublishedPost;
 import com.creatoros.publishing.repositories.PublishedPostRepository;
+import com.creatoros.publishing.utils.UserContextUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,9 +26,9 @@ public class PublishedPostController {
      * Get all published posts for the authenticated user
      */
     @GetMapping
-    public ResponseEntity<List<PublishedPost>> getAllPosts(
-            @RequestHeader("X-User-Id") String userId) {
-        List<PublishedPost> posts = publishedPostRepository.findAll();
+    public ResponseEntity<List<PublishedPost>> getAllPosts() {
+        UUID userId = UserContextUtil.getCurrentUserId();
+        List<PublishedPost> posts = publishedPostRepository.findAllByUserId(userId);
         return ResponseEntity.ok(posts);
     }
 
@@ -37,9 +37,9 @@ public class PublishedPostController {
      */
     @GetMapping("/{postId}")
     public ResponseEntity<PublishedPost> getPostById(
-            @RequestHeader("X-User-Id") String userId,
             @PathVariable UUID postId) {
-        Optional<PublishedPost> post = publishedPostRepository.findById(postId);
+        UUID userId = UserContextUtil.getCurrentUserId();
+        Optional<PublishedPost> post = publishedPostRepository.findByIdAndUserId(postId, userId);
         return post.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -49,9 +49,9 @@ public class PublishedPostController {
      */
     @GetMapping("/platform/{platform}")
     public ResponseEntity<List<PublishedPost>> getPostsByPlatform(
-            @RequestHeader("X-User-Id") String userId,
             @PathVariable String platform) {
-        List<PublishedPost> posts = publishedPostRepository.findByPlatform(platform);
+        UUID userId = UserContextUtil.getCurrentUserId();
+        List<PublishedPost> posts = publishedPostRepository.findByPlatformAndUserId(platform, userId);
         return ResponseEntity.ok(posts);
     }
 
@@ -60,9 +60,9 @@ public class PublishedPostController {
      */
     @GetMapping("/account/{accountId}")
     public ResponseEntity<List<PublishedPost>> getPostsByAccount(
-            @RequestHeader("X-User-Id") String userId,
             @PathVariable UUID accountId) {
-        List<PublishedPost> posts = publishedPostRepository.findByConnectedAccountId(accountId);
+        UUID userId = UserContextUtil.getCurrentUserId();
+        List<PublishedPost> posts = publishedPostRepository.findByConnectedAccountIdAndUserId(accountId, userId);
         return ResponseEntity.ok(posts);
     }
 }

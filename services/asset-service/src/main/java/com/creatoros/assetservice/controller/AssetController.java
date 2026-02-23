@@ -3,6 +3,7 @@ package com.creatoros.assetservice.controller;
 import com.creatoros.assetservice.model.AssetFolder;
 import com.creatoros.assetservice.model.MediaFile;
 import com.creatoros.assetservice.service.AssetService;
+import com.creatoros.assetservice.utils.UserContextUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,8 +26,8 @@ public class AssetController {
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MediaFile> uploadFile(
             @RequestParam("file") @jakarta.validation.constraints.NotNull(message = "File is required") MultipartFile file,
-            @RequestParam("userId") @jakarta.validation.constraints.NotNull(message = "User ID is required") UUID userId,
             @RequestParam("folderId") @jakarta.validation.constraints.NotNull(message = "Folder ID is required") UUID folderId) throws IOException {
+        UUID userId = UserContextUtil.getCurrentUserId();
         MediaFile uploadedFile = assetService.uploadFile(file, userId, folderId);
         return ResponseEntity.ok(uploadedFile);
     }
@@ -35,33 +36,35 @@ public class AssetController {
     public ResponseEntity<AssetFolder> createFolder(
             @RequestParam("name") @jakarta.validation.constraints.NotBlank(message = "Folder name cannot be empty") String name,
             @RequestParam(value = "description", required = false) String description,
-            @RequestParam("userId") @jakarta.validation.constraints.NotNull(message = "User ID is required") UUID userId,
             @RequestParam(value = "parentFolderId", required = false) UUID parentFolderId) {
+        UUID userId = UserContextUtil.getCurrentUserId();
         AssetFolder folder = assetService.createFolder(name, description, userId, parentFolderId);
         return ResponseEntity.ok(folder);
     }
 
     @GetMapping("/folders/{folderId}")
-    public ResponseEntity<Map<String, Object>> getFolderContents(
-            @PathVariable UUID folderId,
-            @RequestParam("userId") UUID userId) {
+    public ResponseEntity<Map<String, Object>> getFolderContents(@PathVariable UUID folderId) {
+        UUID userId = UserContextUtil.getCurrentUserId();
         Map<String, Object> contents = assetService.getFolderContents(userId, folderId);
         return ResponseEntity.ok(contents);
     }
     
     @GetMapping("/folders/root")
-    public ResponseEntity<List<AssetFolder>> getRootFolders(@RequestParam("userId") UUID userId) {
+    public ResponseEntity<List<AssetFolder>> getRootFolders() {
+        UUID userId = UserContextUtil.getCurrentUserId();
         return ResponseEntity.ok(assetService.getRootFolders(userId));
     }
 
     @GetMapping("/{fileId}/metadata")
     public ResponseEntity<MediaFile> getFileMetadata(@PathVariable UUID fileId) {
-        return ResponseEntity.ok(assetService.getFileMetadata(fileId));
+        UUID userId = UserContextUtil.getCurrentUserId();
+        return ResponseEntity.ok(assetService.getFileMetadata(fileId, userId));
     }
 
     @GetMapping("/view/{fileId}")
     public ResponseEntity<org.springframework.core.io.Resource> viewFile(@PathVariable UUID fileId) throws IOException {
-        org.springframework.core.io.Resource fileResource = assetService.downloadFile(fileId);
+        UUID userId = UserContextUtil.getCurrentUserId();
+        org.springframework.core.io.Resource fileResource = assetService.downloadFile(fileId, userId);
         MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
         
         // Try to determine content type from filename if possible, otherwise default

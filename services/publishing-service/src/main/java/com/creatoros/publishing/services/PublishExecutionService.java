@@ -42,7 +42,7 @@ public class PublishExecutionService {
             PublishContext context = PublishContext.builder()
                     .event(event)
                     .connectedAccount(
-                        accountRepository.findById(event.getConnectedAccountId())
+                        accountRepository.findByIdAndUserId(event.getConnectedAccountId(), event.getUserId())
                                     .orElseThrow(() -> 
                                         new RuntimeException("Connected account not found: " + event.getConnectedAccountId())
                                     )

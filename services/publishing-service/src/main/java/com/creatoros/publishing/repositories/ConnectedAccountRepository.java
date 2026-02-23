@@ -12,8 +12,12 @@ import java.util.UUID;
 public interface ConnectedAccountRepository extends JpaRepository<ConnectedAccount, UUID> {
     
     List<ConnectedAccount> findByUserId(UUID userId);
+
+    Optional<ConnectedAccount> findByIdAndUserId(UUID id, UUID userId);
     
     Optional<ConnectedAccount> findByUserIdAndPlatform(UUID userId, String platform);
+
+    List<ConnectedAccount> findAllByUserIdAndPlatformIgnoreCase(UUID userId, String platform);
     
     List<ConnectedAccount> findByUserIdAndIsActiveTrue(UUID userId);
     

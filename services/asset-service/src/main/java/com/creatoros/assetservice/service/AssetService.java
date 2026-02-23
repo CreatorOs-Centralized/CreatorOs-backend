@@ -40,6 +40,9 @@ public class AssetService {
 
     @Transactional
     public MediaFile uploadFile(MultipartFile file, UUID userId, UUID folderId) throws IOException {
+        assetFolderRepository.findByIdAndUserId(folderId, userId)
+            .orElseThrow(() -> new RuntimeException("Folder not found: " + folderId));
+
         String fileName = file.getOriginalFilename();
         String storagePath = generateStoragePath(userId, folderId, fileName);
 
@@ -96,6 +99,11 @@ public class AssetService {
 
     @Transactional
     public AssetFolder createFolder(String name, String description, UUID userId, UUID parentFolderId) {
+        if (parentFolderId != null) {
+            assetFolderRepository.findByIdAndUserId(parentFolderId, userId)
+                    .orElseThrow(() -> new RuntimeException("Parent folder not found: " + parentFolderId));
+        }
+
         AssetFolder folder = AssetFolder.builder()
                 .name(name)
                 .description(description)
@@ -147,13 +155,13 @@ public class AssetService {
         return String.format("/api/assets/view/%s", fileId);
     }
     
-    public MediaFile getFileMetadata(UUID fileId) {
-        return mediaFileRepository.findById(fileId)
+    public MediaFile getFileMetadata(UUID fileId, UUID userId) {
+        return mediaFileRepository.findByIdAndUserId(fileId, userId)
                 .orElseThrow(() -> new RuntimeException("File not found: " + fileId));
     }
 
-    public org.springframework.core.io.Resource downloadFile(UUID fileId) throws IOException {
-        MediaFile mediaFile = mediaFileRepository.findById(fileId)
+    public org.springframework.core.io.Resource downloadFile(UUID fileId, UUID userId) throws IOException {
+        MediaFile mediaFile = mediaFileRepository.findByIdAndUserId(fileId, userId)
                 .orElseThrow(() -> new RuntimeException("File not found: " + fileId));
         
         BlobId blobId = BlobId.of(mediaFile.getBucketName(), mediaFile.getStoragePath());

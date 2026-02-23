@@ -2,13 +2,13 @@ package com.creatoros.publishing.controllers;
 
 import com.creatoros.publishing.entities.ConnectedAccount;
 import com.creatoros.publishing.repositories.ConnectedAccountRepository;
+import com.creatoros.publishing.utils.UserContextUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,9 +29,9 @@ public class ConnectedAccountController {
      * Get all connected accounts for the authenticated user
      */
     @GetMapping
-    public ResponseEntity<List<Map<String, Object>>> getAllAccounts(
-            @RequestHeader("X-User-Id") String userId) {
-        List<ConnectedAccount> accounts = accountRepository.findAll();
+    public ResponseEntity<List<Map<String, Object>>> getAllAccounts() {
+        UUID userId = UserContextUtil.getCurrentUserId();
+        List<ConnectedAccount> accounts = accountRepository.findByUserId(userId);
         
         List<Map<String, Object>> response = accounts.stream()
                 .map(this::toSummary)
@@ -45,9 +45,9 @@ public class ConnectedAccountController {
      */
     @GetMapping("/platform/{platform}")
     public ResponseEntity<List<Map<String, Object>>> getAccountsByPlatform(
-            @RequestHeader("X-User-Id") String userId,
             @PathVariable String platform) {
-        List<ConnectedAccount> accounts = accountRepository.findByPlatform(platform.toUpperCase());
+        UUID userId = UserContextUtil.getCurrentUserId();
+        List<ConnectedAccount> accounts = accountRepository.findAllByUserIdAndPlatformIgnoreCase(userId, platform);
         
         List<Map<String, Object>> response = accounts.stream()
                 .map(this::toSummary)
@@ -61,9 +61,9 @@ public class ConnectedAccountController {
      */
     @GetMapping("/{accountId}")
     public ResponseEntity<?> getAccountById(
-            @RequestHeader("X-User-Id") String userId,
             @PathVariable UUID accountId) {
-        return accountRepository.findById(accountId)
+        UUID userId = UserContextUtil.getCurrentUserId();
+        return accountRepository.findByIdAndUserId(accountId, userId)
                 .map(account -> ResponseEntity.ok(toSummary(account)))
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Account not found")));
@@ -73,9 +73,9 @@ public class ConnectedAccountController {
      * Get YouTube channels for the authenticated user
      */
     @GetMapping("/youtube/channels")
-    public ResponseEntity<List<Map<String, Object>>> getYouTubeChannels(
-            @RequestHeader("X-User-Id") String userId) {
-        List<ConnectedAccount> accounts = accountRepository.findByPlatform("YOUTUBE");
+    public ResponseEntity<List<Map<String, Object>>> getYouTubeChannels() {
+        UUID userId = UserContextUtil.getCurrentUserId();
+        List<ConnectedAccount> accounts = accountRepository.findAllByUserIdAndPlatformIgnoreCase(userId, "YOUTUBE");
         
         List<Map<String, Object>> response = accounts.stream()
                 .map(account -> {

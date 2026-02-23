@@ -32,9 +32,9 @@ public class YouTubeVideoService {
     /**
      * Get all videos from a YouTube channel
      */
-    public List<Map<String, Object>> getChannelVideos(UUID accountId, Integer maxResults) {
+    public List<Map<String, Object>> getChannelVideos(UUID userId, UUID accountId, Integer maxResults) {
         
-        ConnectedAccount account = accountRepository.findById(accountId)
+        ConnectedAccount account = accountRepository.findByIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new RuntimeException("Account not found: " + accountId));
 
         if (!"YOUTUBE".equals(account.getPlatform())) {
@@ -130,9 +130,9 @@ public class YouTubeVideoService {
     /**
      * Get specific video details by video ID
      */
-    public Map<String, Object> getVideoById(UUID accountId, String videoId) {
+    public Map<String, Object> getVideoById(UUID userId, UUID accountId, String videoId) {
         
-        ConnectedAccount account = accountRepository.findById(accountId)
+        ConnectedAccount account = accountRepository.findByIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new RuntimeException("Account not found: " + accountId));
 
         try {
@@ -197,9 +197,9 @@ public class YouTubeVideoService {
     /**
      * Get channel statistics
      */
-    public Map<String, Object> getChannelStatistics(UUID accountId) {
+    public Map<String, Object> getChannelStatistics(UUID userId, UUID accountId) {
         
-        ConnectedAccount account = accountRepository.findById(accountId)
+        ConnectedAccount account = accountRepository.findByIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new RuntimeException("Account not found: " + accountId));
 
         try {
