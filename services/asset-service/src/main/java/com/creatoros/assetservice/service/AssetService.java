@@ -149,10 +149,9 @@ public class AssetService {
     }
 
     private String constructPublicUrl(UUID fileId) {
-        // Use backend proxy URL to avoid GCS signing issues locally
-        // This assumes the backend is accessible at the relative path /api/assets/view/{id}
-        // Frontends can prepend the domain
-        return String.format("/api/assets/view/%s", fileId);
+        // Return the actual endpoint path where this file can be viewed
+        // Frontends can prepend the domain (e.g., https://example.com/assets/view/{id})
+        return String.format("/assets/view/%s", fileId);
     }
     
     public MediaFile getFileMetadata(UUID fileId, UUID userId) {
