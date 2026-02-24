@@ -57,6 +57,20 @@ youtube:
   state-secret: ${YOUTUBE_STATE_SECRET}
   state-ttl-seconds: ${YOUTUBE_STATE_TTL_SECONDS:600}
 
+instagram:
+  client-id: ${INSTAGRAM_CLIENT_ID}
+  client-secret: ${INSTAGRAM_CLIENT_SECRET}
+  redirect-uri: ${INSTAGRAM_REDIRECT_URI}
+  token-url: https://graph.instagram.com/v18.0/oauth/access_token
+  api-base-url: https://graph.instagram.com/v18.0
+
+facebook:
+  client-id: ${FACEBOOK_CLIENT_ID}
+  client-secret: ${FACEBOOK_CLIENT_SECRET}
+  redirect-uri: ${FACEBOOK_REDIRECT_URI}
+  token-url: https://graph.facebook.com/v18.0/oauth/access_token
+  api-base-url: https://graph.facebook.com/v18.0
+
 gcp:
   project-id: ${GCP_PROJECT_ID}
   bucket-name: ${GCP_BUCKET_NAME}

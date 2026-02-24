@@ -41,6 +41,10 @@ public class ConnectedAccount {
 
     private String igUserId;
 
+    private String instagramBusinessAccountId;
+
+    private String facebookPageId;
+
     private String youtubeChannelId;
 
     private String linkedinAuthorUrn;
