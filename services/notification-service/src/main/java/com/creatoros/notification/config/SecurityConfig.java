@@ -4,6 +4,7 @@ import com.creatoros.notification.security.JwtAuthenticationFilter;
 import com.creatoros.notification.security.JwtUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -28,6 +29,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/actuator/**"
                 ).permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/internal/notifications/ingest").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)

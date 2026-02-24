@@ -31,7 +31,7 @@ springdoc:
 creatoros:
   auth:
     debug-token-response: ${AUTH_DEBUG_TOKEN_RESPONSE:false}
-    frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+    frontend-base-url: ${FRONTEND_BASE_URL:https://creatoros.adharbattulwar.com}
     mail-from: ${AUTH_MAIL_FROM:no-reply@creatoros.local}
 
   notification-service:

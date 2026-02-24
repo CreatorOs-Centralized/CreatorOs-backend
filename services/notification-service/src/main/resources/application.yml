@@ -46,6 +46,16 @@ info:
     version: ${APP_VERSION:0.0.1-SNAPSHOT}
 
 creatoros:
+  email:
+    provider: ${EMAIL_PROVIDER:brevo}
+
+  brevo:
+    api-key: ${BREVO_API_KEY:${BREVO_SMTP_KEY:}}
+    base-url: ${BREVO_BASE_URL:https://api.brevo.com}
+    from:
+      email: ${BREVO_FROM_EMAIL}
+      name: ${BREVO_FROM_NAME:CreatorOS}
+
   kafka:
     topics:
       publish-started: ${KAFKA_TOPIC_PUBLISH_STARTED:publish.started}
