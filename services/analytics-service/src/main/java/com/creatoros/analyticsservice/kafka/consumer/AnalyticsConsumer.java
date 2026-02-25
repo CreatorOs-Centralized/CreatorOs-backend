@@ -27,6 +27,7 @@ public class AnalyticsConsumer {
                 .userId(event.getUserId())
                 .platform(event.getPlatform())
                 .platformPostId(event.getPlatformPostId())
+                .title(event.getTitle())
                 .requestedAt(LocalDateTime.now())
                 .build();
 
