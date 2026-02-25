@@ -1,22 +1,19 @@
-package com.creatoros.analyticsservice.event;
+package com.creatoros.analyticsservice.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AnalyticsIngestRequestedEvent {
-    private UUID eventId;
-    private UUID userId;
-    private String platform;
+public class PostOptionDTO {
+    private UUID postId;
     private String platformPostId;
     private String title;
-    private LocalDateTime requestedAt;
+    private String platform;
 }

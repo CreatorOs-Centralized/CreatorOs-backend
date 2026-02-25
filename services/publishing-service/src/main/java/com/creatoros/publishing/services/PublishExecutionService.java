@@ -32,21 +32,18 @@ public class PublishExecutionService {
         PublishJob job = publishJobService.createJob(event);
 
         eventProducer.publishStarted(
-            job.getUserId(),
-            event.getEmail(),
-            job.getId(),
-            event.getPlatform()
-        );
+                job.getUserId(),
+                event.getEmail(),
+                job.getId(),
+                event.getPlatform());
 
         try {
             PublishContext context = PublishContext.builder()
                     .event(event)
                     .connectedAccount(
-                        accountRepository.findByIdAndUserId(event.getConnectedAccountId(), event.getUserId())
-                                    .orElseThrow(() -> 
-                                        new RuntimeException("Connected account not found: " + event.getConnectedAccountId())
-                                    )
-                    )
+                            accountRepository.findByIdAndUserId(event.getConnectedAccountId(), event.getUserId())
+                                    .orElseThrow(() -> new RuntimeException(
+                                            "Connected account not found: " + event.getConnectedAccountId())))
                     .build();
 
             PublishResult result = publisherRegistry
@@ -73,8 +70,7 @@ public class PublishExecutionService {
                     PublishResult.builder()
                             .success(false)
                             .errorMessage(ex.getMessage())
-                            .build()
-            );
+                            .build());
         }
     }
 
@@ -99,8 +95,8 @@ public class PublishExecutionService {
                 job.getId(),
                 context.getEvent().getPlatform(),
                 result.getPlatformPostId(),
-                result.getPermalink()
-        );
+                context.getEvent().getTitle(),
+                result.getPermalink());
     }
 
     private void emitPublishFailed(PublishJob job, PublishRequestEvent event, String errorMessage) {
@@ -109,8 +105,7 @@ public class PublishExecutionService {
                 event.getEmail(),
                 job.getId(),
                 event.getPlatform(),
-                errorMessage == null ? "publish_failed" : errorMessage
-        );
+                errorMessage == null ? "publish_failed" : errorMessage);
     }
 
     private void emitPublishRetryRequested(PublishJob job, PublishRequestEvent event, String reason) {
@@ -124,8 +119,7 @@ public class PublishExecutionService {
                 event.getEmail(),
                 job.getId(),
                 event.getPlatform(),
-                reason == null ? "retry_requested" : reason
-        );
+                reason == null ? "retry_requested" : reason);
     }
 
     public record PublishExecutionOutcome(PublishJob job, PublishResult result) {
