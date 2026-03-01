@@ -62,3 +62,11 @@ creatoros:
   auth:
     debug-token-response: ${AUTH_DEBUG_TOKEN_RESPONSE:false}
     skip-email-verification: ${AUTH_SKIP_EMAIL_VERIFICATION:false}
+
+  oauth:
+    google:
+      enabled: ${GOOGLE_OAUTH_ENABLED:false}
+      client-id: ${GOOGLE_CLIENT_ID:}
+      client-secret: ${GOOGLE_CLIENT_SECRET:}
+      token-uri: ${GOOGLE_TOKEN_URI:https://oauth2.googleapis.com/token}
+      jwks-uri: ${GOOGLE_JWKS_URI:https://www.googleapis.com/oauth2/v3/certs}
