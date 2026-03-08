@@ -43,6 +43,8 @@ public interface PublishedPostRepository extends JpaRepository<PublishedPost, UU
     
     List<PublishedPost> findByConnectedAccountId(UUID connectedAccountId);
 
+    long deleteByConnectedAccountId(UUID connectedAccountId);
+
         @Query(value = """
                         SELECT pp.*
                         FROM published_posts pp

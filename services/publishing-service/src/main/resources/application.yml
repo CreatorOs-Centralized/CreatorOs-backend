@@ -61,8 +61,12 @@ instagram:
   client-id: ${INSTAGRAM_CLIENT_ID}
   client-secret: ${INSTAGRAM_CLIENT_SECRET}
   redirect-uri: ${INSTAGRAM_REDIRECT_URI}
-  token-url: https://graph.instagram.com/v18.0/oauth/access_token
-  api-base-url: https://graph.instagram.com/v18.0
+  token-url: https://api.instagram.com/oauth/access_token
+  long-lived-token-url: https://graph.instagram.com/access_token
+  refresh-token-url: https://graph.instagram.com/refresh_access_token
+  api-base-url: https://graph.instagram.com/v25.0
+  state-secret: ${INSTAGRAM_STATE_SECRET}
+  state-ttl-seconds: ${INSTAGRAM_STATE_TTL_SECONDS:600}
 
 facebook:
   client-id: ${FACEBOOK_CLIENT_ID}
@@ -70,6 +74,12 @@ facebook:
   redirect-uri: ${FACEBOOK_REDIRECT_URI}
   token-url: https://graph.facebook.com/v18.0/oauth/access_token
   api-base-url: https://graph.facebook.com/v18.0
+  state-secret: ${FACEBOOK_STATE_SECRET}
+  state-ttl-seconds: ${FACEBOOK_STATE_TTL_SECONDS:600}
+
+meta:
+  app-secret: ${META_APP_SECRET:${INSTAGRAM_CLIENT_SECRET}}
+  data-deletion-status-base-url: ${META_DATA_DELETION_STATUS_BASE_URL:https://creatoros-api.adharbattulwar.com}
 
 gcp:
   project-id: ${GCP_PROJECT_ID}

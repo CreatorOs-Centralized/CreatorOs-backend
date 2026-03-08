@@ -15,9 +15,14 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,16 +49,24 @@ public class FacebookOAuthService {
     @Value("${facebook.api-base-url}")
     private String apiBaseUrl;
 
+    @Value("${facebook.state-secret}")
+    private String stateSecret;
+
+    @Value("${facebook.state-ttl-seconds:600}")
+    private long stateTtlSeconds;
+
     /**
      * Build Facebook OAuth authorization URL
      * Scopes: pages_read_engagement, pages_manage_posts, pages_manage_metadata, publish_pages
      */
     public String buildAuthorizationUrl(String userId) {
+        String state = buildState(userId);
         return "https://www.facebook.com/v18.0/dialog/oauth"
                 + "?client_id=" + urlEncode(clientId)
                 + "&redirect_uri=" + urlEncode(redirectUri)
                 + "&scope=" + urlEncode("pages_read_engagement,pages_manage_posts,pages_manage_metadata,publish_pages")
-                + "&response_type=code";
+            + "&response_type=code"
+            + "&state=" + urlEncode(state);
     }
 
     /**
@@ -170,6 +183,72 @@ public class FacebookOAuthService {
             log.error("Failed to handle Facebook OAuth callback", ex);
             throw new RuntimeException("Facebook OAuth callback failed: " + ex.getMessage(), ex);
         }
+    }
+
+    public String resolveState(String state) {
+        if (state == null || state.isBlank()) {
+            throw new RuntimeException("Missing OAuth state");
+        }
+
+        String[] parts = state.split("\\.");
+        if (parts.length != 2) {
+            throw new RuntimeException("Invalid OAuth state format");
+        }
+
+        String payload = new String(base64UrlDecode(parts[0]), StandardCharsets.UTF_8);
+        String expectedSignature = hmacSha256Base64Url(payload, stateSecret);
+        if (!MessageDigest.isEqual(base64UrlDecode(parts[1]), base64UrlDecode(expectedSignature))) {
+            throw new RuntimeException("Invalid OAuth state signature");
+        }
+
+        String[] payloadParts = payload.split(":", 2);
+        if (payloadParts.length != 2) {
+            throw new RuntimeException("Invalid OAuth state payload");
+        }
+
+        String userId = payloadParts[0];
+        long issuedAt = parseEpochSeconds(payloadParts[1]);
+        long now = Instant.now().getEpochSecond();
+        if (issuedAt <= 0 || now - issuedAt > Math.max(60L, stateTtlSeconds)) {
+            throw new RuntimeException("Expired OAuth state");
+        }
+
+        return userId;
+    }
+
+    private String buildState(String userId) {
+        long issuedAt = Instant.now().getEpochSecond();
+        String payload = userId + ":" + issuedAt;
+        String payloadEncoded = base64UrlEncode(payload.getBytes(StandardCharsets.UTF_8));
+        String signatureEncoded = hmacSha256Base64Url(payload, stateSecret);
+        return payloadEncoded + "." + signatureEncoded;
+    }
+
+    private static String hmacSha256Base64Url(String value, String secret) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] digest = mac.doFinal(value.getBytes(StandardCharsets.UTF_8));
+            return base64UrlEncode(digest);
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to sign OAuth state", ex);
+        }
+    }
+
+    private static long parseEpochSeconds(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (Exception ex) {
+            return -1L;
+        }
+    }
+
+    private static String base64UrlEncode(byte[] bytes) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private static byte[] base64UrlDecode(String value) {
+        return Base64.getUrlDecoder().decode(value);
     }
 
     private String urlEncode(String value) {

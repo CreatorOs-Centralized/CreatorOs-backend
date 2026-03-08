@@ -7,14 +7,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
 @RestController
-@RequestMapping("/facebook")
 @RequiredArgsConstructor
 @Slf4j
 public class FacebookOAuthController {
@@ -24,7 +22,7 @@ public class FacebookOAuthController {
     /**
      * Get Facebook OAuth authorization URL
      */
-    @GetMapping("/login")
+    @GetMapping("/facebook/login")
     public String login() {
         String userId = UserContextUtil.getCurrentUserId().toString();
         log.info("Generating Facebook OAuth URL for user: {}", userId);
@@ -34,11 +32,12 @@ public class FacebookOAuthController {
     /**
      * Handle OAuth callback from Facebook
      */
-    @GetMapping("/callback")
+    @GetMapping("/oauth/facebook/callback")
     public ResponseEntity<?> callback(
-            @RequestParam String code) {
+            @RequestParam String code,
+            @RequestParam String state) {
         try {
-            String userId = UserContextUtil.getCurrentUserId().toString();
+            String userId = oAuthService.resolveState(state);
             log.info("Received Facebook OAuth callback for user: {}", userId);
             oAuthService.handleCallback(userId, code);
             return ResponseEntity.ok(Map.of(
