@@ -39,4 +39,5 @@ management:
 logging:
   level:
     root: ${LOG_LEVEL:INFO}
-    com.creatoros: DEBUG
+    com.creatoros: INFO
+    org.springframework.web: INFO

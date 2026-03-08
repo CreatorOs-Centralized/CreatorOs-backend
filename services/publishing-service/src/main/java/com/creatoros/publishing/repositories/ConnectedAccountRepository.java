@@ -22,4 +22,10 @@ public interface ConnectedAccountRepository extends JpaRepository<ConnectedAccou
     List<ConnectedAccount> findByUserIdAndIsActiveTrue(UUID userId);
     
     List<ConnectedAccount> findByPlatform(String platform);
+
+    List<ConnectedAccount> findByPlatformAccountIdOrIgUserIdOrInstagramBusinessAccountId(
+            String platformAccountId,
+            String igUserId,
+            String instagramBusinessAccountId
+    );
 }
