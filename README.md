@@ -156,4 +156,4 @@ docker compose restart publishing-service
 
 ## License
 
-Add your project license here.
+Made By Team CreatorOs
