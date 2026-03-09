@@ -78,7 +78,7 @@ facebook:
   state-ttl-seconds: ${FACEBOOK_STATE_TTL_SECONDS:600}
 
 meta:
-  app-secret: ${META_APP_SECRET:${INSTAGRAM_CLIENT_SECRET}}
+  app-secret: ${META_APP_SECRET}
   data-deletion-status-base-url: ${META_DATA_DELETION_STATUS_BASE_URL:https://creatoros-api.adharbattulwar.com}
 
 gcp:
