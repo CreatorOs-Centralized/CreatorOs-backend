@@ -20,7 +20,7 @@ public class InstagramOAuthController {
 
     private final InstagramOAuthService oAuthService;
 
-    @GetMapping("/instagram/login")
+    @GetMapping("/oauth/instagram/login")
     public String login() {
         String userId = UserContextUtil.getCurrentUserId().toString();
         log.info("Generating Instagram OAuth URL for user {}", userId);
