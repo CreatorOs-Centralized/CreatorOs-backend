@@ -22,7 +22,7 @@ public class FacebookOAuthController {
     /**
      * Get Facebook OAuth authorization URL
      */
-    @GetMapping("/facebook/login")
+    @GetMapping("/oauth/facebook/login")
     public String login() {
         String userId = UserContextUtil.getCurrentUserId().toString();
         log.info("Generating Facebook OAuth URL for user: {}", userId);
