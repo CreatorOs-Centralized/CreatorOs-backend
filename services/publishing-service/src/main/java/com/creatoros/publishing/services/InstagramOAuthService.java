@@ -34,7 +34,7 @@ import java.util.UUID;
 public class InstagramOAuthService {
 
     private static final String AUTHORIZATION_URL = "https://www.instagram.com/oauth/authorize";
-    private static final String REQUESTED_SCOPES = "instagram_business_basic,instagram_business_content_publish,instagram_business_manage_messages,instagram_business_manage_comments";
+    private static final String REQUESTED_SCOPES = "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish,instagram_business_manage_insights";
 
     private final ConnectedAccountRepository accountRepository;
     private final RestTemplate restTemplate;
