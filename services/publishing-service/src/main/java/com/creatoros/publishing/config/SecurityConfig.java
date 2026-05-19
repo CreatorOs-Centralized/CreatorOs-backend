@@ -23,7 +23,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtUtil jwtUtil) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            .cors(cors -> {})
+            // CORS is handled by API Gateway - disable here to prevent duplicate headers
+            .cors(cors -> cors.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .anonymous(anon -> anon.disable())
             .authorizeHttpRequests(auth -> auth

@@ -10,20 +10,21 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-@Configuration
+// @Configuration
+// CORS is handled by API Gateway - this configuration is disabled to prevent duplicate headers
 public class CorsConfig {
 
-    @Bean
+    // @Bean
     CorsConfigurationSource corsConfigurationSource(
-            @Value("${creatoros.cors.allowed-origins:https://creatoros.adharbattulwar.com,http://localhost:5173,http://localhost:3000}") String allowedOrigins
+            @Value("${creatoros.cors.allowed-origin-patterns:https://creatoros.adharbattulwar.com,https://creatoros-api.adharbattulwar.com,https://*.adharbattulwar.com,http://localhost:*,https://*.ngrok-free.dev,https://creator-os-frontend-final.vercel.app}") String allowedOriginPatterns
     ) {
-        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+        List<String> originPatterns = Arrays.stream(allowedOriginPatterns.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isBlank())
                 .toList();
 
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(origins);
+        config.setAllowedOriginPatterns(originPatterns);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization", "Content-Disposition"));

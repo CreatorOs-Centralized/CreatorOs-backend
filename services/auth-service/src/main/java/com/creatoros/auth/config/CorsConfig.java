@@ -10,10 +10,11 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-@Configuration
+// @Configuration
+// CORS is handled by API Gateway - this configuration is disabled to prevent duplicate headers
 public class CorsConfig {
 
-    @Bean
+    // @Bean
     CorsConfigurationSource corsConfigurationSource(
             @Value("${creatoros.cors.allowed-origins:http://localhost:5173}") String allowedOrigins
     ) {

@@ -13,6 +13,7 @@ spring:
               - "http://localhost:5173"
               - "https://creatoros.adharbattulwar.com"
               - "https://unanimated-myah-authoritatively.ngrok-free.dev"
+              - "https://creator-os-frontend-final.vercel.app"
             allowedMethods:
               - GET
               - POST
