@@ -118,6 +118,11 @@ services:
       - AUTH_DEBUG_TOKEN_RESPONSE=${AUTH_DEBUG_TOKEN_RESPONSE:-false}
       - AUTH_SKIP_EMAIL_VERIFICATION=${AUTH_SKIP_EMAIL_VERIFICATION:-false}
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-https://creatoros.adharbattulwar.com}
+      - GOOGLE_OAUTH_ENABLED=${GOOGLE_OAUTH_ENABLED:-false}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_TOKEN_URI=${GOOGLE_TOKEN_URI:-https://oauth2.googleapis.com/token}
+      - GOOGLE_JWKS_URI=${GOOGLE_JWKS_URI:-https://www.googleapis.com/oauth2/v3/certs}
     depends_on:
       postgres:
         condition: service_healthy

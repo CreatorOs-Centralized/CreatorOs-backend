@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import com.creatoros.auth.dto.RoleDto;
 import com.creatoros.auth.dto.UserDto;
 import com.creatoros.auth.dto.auth.LoginRequest;
+import com.creatoros.auth.dto.auth.GoogleOAuthRequest;
 import com.creatoros.auth.dto.auth.LogoutRequest;
 import com.creatoros.auth.dto.auth.PasswordResetConfirmRequest;
 import com.creatoros.auth.dto.auth.PasswordResetRequest;
@@ -17,6 +18,7 @@ import com.creatoros.auth.dto.auth.TokenResponse;
 import com.creatoros.auth.dto.auth.VerifyEmailRequest;
 import com.creatoros.auth.security.AuthenticatedUser;
 import com.creatoros.auth.service.AuthService;
+import com.creatoros.auth.service.GoogleOAuthService;
 import com.creatoros.auth.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -54,10 +56,12 @@ public class AuthController {
 
     private final UserService userService;
     private final AuthService authService;
+    private final GoogleOAuthService googleOAuthService;
 
-    public AuthController(UserService userService, AuthService authService) {
+    public AuthController(UserService userService, AuthService authService, GoogleOAuthService googleOAuthService) {
         this.userService = userService;
         this.authService = authService;
+        this.googleOAuthService = googleOAuthService;
     }
 
     @PostMapping("/register")
@@ -71,6 +75,14 @@ public class AuthController {
             HttpServletRequest httpRequest
     ) {
         return authService.login(request, httpRequest);
+    }
+
+    @PostMapping("/oauth/google")
+    public TokenResponse googleOauth(
+            @Valid @org.springframework.web.bind.annotation.RequestBody GoogleOAuthRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        return googleOAuthService.loginOrSignup(request, httpRequest);
     }
 
     @PostMapping("/refresh")
