@@ -123,6 +123,7 @@ docker compose logs -f
 ## Documentation
 
 - [Architecture notes](docs/architecture.md)
+- [Architecture diagrams](docs/architecture-diagrams.md)
 - [API contracts](docs/api-contracts.md)
 - [Database design](docs/db-design.md)
 - [Event flow](docs/event-flow.md)
