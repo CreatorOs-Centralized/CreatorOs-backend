@@ -30,7 +30,8 @@ public class PublishEventProducer {
         kafkaTemplate.send("publish.started", event);
     }
 
-    public void publishSuccess(UUID userId, String email, UUID publishJobId, String platform, String platformPostId, String permalink) {
+    public void publishSuccess(UUID userId, String email, UUID publishJobId, String platform, String platformPostId,
+            String title, String permalink) {
         PublishSucceededEvent event = PublishSucceededEvent.builder()
                 .eventId(UUID.randomUUID())
                 .userId(userId)
@@ -38,6 +39,7 @@ public class PublishEventProducer {
                 .platform(platform)
                 .email(email)
                 .platformPostId(platformPostId)
+                .title(title)
                 .permalink(permalink)
                 .publishedAt(LocalDateTime.now())
                 .eventCreatedAt(LocalDateTime.now())
@@ -74,4 +76,3 @@ public class PublishEventProducer {
         kafkaTemplate.send("publish.retry.requested", event);
     }
 }
-

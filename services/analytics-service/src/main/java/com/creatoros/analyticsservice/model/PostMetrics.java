@@ -35,6 +35,8 @@ public class PostMetrics {
 
     private String platformPostId;
 
+    private String postTitle;
+
     @Builder.Default
     private Long views = 0L;
 

@@ -12,5 +12,11 @@ import java.util.UUID;
 public interface PostMetricsDailyRepository extends JpaRepository<PostMetricsDaily, UUID> {
     List<PostMetricsDaily> findByUserIdAndMetricDateBetween(UUID userId, LocalDate startDate, LocalDate endDate);
 
+    List<PostMetricsDaily> findByUserIdAndPlatformAndMetricDateBetween(UUID userId, String platform,
+            LocalDate startDate, LocalDate endDate);
+
+    List<PostMetricsDaily> findByPublishedPostIdAndMetricDateBetween(UUID publishedPostId, LocalDate startDate,
+            LocalDate endDate);
+
     List<PostMetricsDaily> findByPublishedPostId(UUID publishedPostId);
 }

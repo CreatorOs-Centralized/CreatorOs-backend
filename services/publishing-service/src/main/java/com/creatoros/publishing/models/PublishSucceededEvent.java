@@ -20,6 +20,7 @@ public class PublishSucceededEvent {
     private String platform;
     private String email;
     private String platformPostId;
+    private String title;
     private String permalink;
     private LocalDateTime publishedAt;
     private LocalDateTime eventCreatedAt;
